@@ -1,0 +1,25 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# VSCode (just in case)
+.vscode/
+
+# Build output
+bin/
+target/
+build/
+
+# Logs
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Database files
+*.db
+
+# Dependency JARs (if you don’t want to commit them)
+lib/

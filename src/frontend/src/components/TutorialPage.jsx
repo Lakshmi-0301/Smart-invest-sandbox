@@ -220,7 +220,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                 <header className="tutorial-header">
                     <div className="header-content">
                         <button onClick={onBackToHome} className="back-btn">← Back to Home</button>
-                        <h1>Stock Market Academy</h1>
+                        <h1>Smart Invest Tutorials</h1>
                     </div>
                 </header>
                 <div className="tutorial-container">
@@ -238,7 +238,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                 <div className="header-content">
                     <button onClick={onBackToHome} className="back-btn">← Back to Home</button>
                     <div className="header-text">
-                        <h1>Stock Market Academy</h1>
+                        <h1>Smart Invest Tutorials</h1>
                         <p>Master stock market investing with interactive courses</p>
                         {user && (
                             <div className="user-stats">

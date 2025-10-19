@@ -292,20 +292,17 @@ public class TutorialService {
                     return answers;
                 }
 
-                // Split by commas
                 String[] pairs = content.split(",");
                 System.out.println("Found " + pairs.length + " pairs");
 
                 for (String pair : pairs) {
                     System.out.println("Processing pair: '" + pair + "'");
 
-                    // Split by the first colon only
                     int colonIndex = pair.indexOf(':');
                     if (colonIndex > 0) {
                         String keyStr = pair.substring(0, colonIndex).trim();
                         String valueStr = pair.substring(colonIndex + 1).trim();
 
-                        // Remove quotes from key and value
                         keyStr = keyStr.replace("\"", "");
                         valueStr = valueStr.replace("\"", "");
 
@@ -315,23 +312,23 @@ public class TutorialService {
                             int questionIndex = Integer.parseInt(keyStr);
                             int answerIndex = Integer.parseInt(valueStr);
                             answers.put(questionIndex, answerIndex);
-                            System.out.println("✅ Added: Q" + questionIndex + " = " + answerIndex);
+                            System.out.println("Added: Q" + questionIndex + " = " + answerIndex);
                         } catch (NumberFormatException e) {
-                            System.err.println("❌ Number format error in pair: " + pair);
+                            System.err.println("Number format error in pair: " + pair);
                         }
                     } else {
-                        System.err.println("❌ No colon found in pair: " + pair);
+                        System.err.println("No colon found in pair: " + pair);
                     }
                 }
             } else {
-                System.err.println("❌ Answers JSON doesn't start/end with braces: " + unescapedJson);
+                System.err.println("Answers JSON doesn't start/end with braces: " + unescapedJson);
             }
 
             System.out.println("Final answers map: " + answers);
             System.out.println("Total answers: " + answers.size());
 
         } catch (Exception e) {
-            System.err.println("❌ Error parsing answers: " + e.getMessage());
+            System.err.println("Error parsing answers: " + e.getMessage());
             e.printStackTrace();
         }
         return answers;
@@ -412,14 +409,6 @@ public class TutorialService {
         fundamentals.setVideoUrl("https://www.youtube.com/embed/GcZW24SkbHM?si=s2Av7IIVAffAuRyG");
         fundamentals.setHasVideo(true);
         fundamentals.setQuiz(QuizData.getStockFundamentalsQuiz());
-//        System.out.println("=== QUIZ INITIALIZATION DEBUG ===");
-//        Quiz fundamentalsQuiz = QuizData.getStockFundamentalsQuiz();
-//        System.out.println("Quiz created: " + (fundamentalsQuiz != null));
-//        System.out.println("Questions list: " + (fundamentalsQuiz.getQuestions() != null));
-//        System.out.println("Questions count: " + (fundamentalsQuiz.getQuestions() != null ? fundamentalsQuiz.getQuestions().size() : 0));
-//        fundamentals.setQuiz(fundamentalsQuiz);
-//        System.out.println("Quiz set on tutorial: " + (fundamentals.getQuiz() != null));
-//        System.out.println("=================================");
         fundamentals.setHasQuiz(true);
         fundamentals.setCompletionRate(85.5);
 
@@ -461,6 +450,7 @@ public class TutorialService {
                 "<li><strong>Candlestick Charts:</strong> Visual representation of price action</li>" +
                 "</ul>");
         chartReading.setEstimatedMinutes(60);
+        chartReading.setVideoUrl("https://www.youtube.com/embed/J-ntsk7Dsd0?si=0Nor5ytnxK3NHr8e");
         chartReading.setHasVideo(true);
         chartReading.setHasQuiz(true);
 

@@ -52,9 +52,19 @@ public class QuizData {
         q3.setExplanation("Bull markets are characterized by rising prices and investor optimism.");
         q3.setQuestionType("MULTIPLE_CHOICE");
         questions.add(q3);
-        System.out.println("Questions list size before setting: " + questions.size());
-        quiz.setQuestions(questions);
-        System.out.println("Questions list size after setting: " + (quiz.getQuestions() != null ? quiz.getQuestions().size() : "NULL"));
+
+        Question q4 = new Question();
+        q4.setQuestionText("Stock exchange helps in?");
+        q4.setOptions(Arrays.asList(
+                "Providing liquidity to the existing securities",
+                "contributing to economic growth",
+                "pricing of securities",
+                "All of the above"
+        ));
+        q4.setCorrectAnswerIndex(3);
+        q4.setExplanation("Stock exchage plays a crucial role by enhancing liquidity for investors, facilitating capital formation for economic growth and enabling efficient price discovery of securities.");
+        q4.setQuestionType("MULTIPLE_CHOICE");
+        questions.add(q4);
         quiz.setQuestions(questions);
         return quiz;
     }

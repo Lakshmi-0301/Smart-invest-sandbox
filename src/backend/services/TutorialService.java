@@ -1,74 +1,687 @@
 package backend.services;
 
 import backend.models.TutorialSection;
+import backend.models.Quiz;
+import backend.models.Question;
+import backend.models.Exercise;
+import backend.models.CaseStudy;
+import backend.database.TutorialDatabaseHandler;
+import backend.models.data.QuizData;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TutorialService {
-    private final Map<String, TutorialSection> tutorials;
+    private Map<String, TutorialSection> tutorials = new HashMap<>();
+    private TutorialDatabaseHandler dbHandler;
 
     public TutorialService() {
-        this.tutorials = initializeTutorials();
+        this.dbHandler = new TutorialDatabaseHandler();
+        initializeStockMarketTutorials();
     }
 
-    private Map<String, TutorialSection> initializeTutorials() {
-        Map<String, TutorialSection> tutorialMap = new HashMap<>();
-
-        TutorialSection basics = new TutorialSection();
-        basics.setId("basics");
-        basics.setTitle("Stock Market Basics");
-        basics.setDescription("Learn the fundamental concepts of stock market trading");
-        basics.setContent("<h3>What are Stocks?</h3><p>Stocks represent ownership in a company. When you buy a stock, you become a shareholder.</p><h3>Key Concepts:</h3><ul><li><strong>Bull Market:</strong> Rising prices</li><li><strong>Bear Market:</strong> Falling prices</li><li><strong>Portfolio:</strong> Your collection of investments</li><li><strong>Diversification:</strong> Spreading investments to reduce risk</li></ul>");
-        basics.setExerciseQuestion("If a company has 1 million shares and you own 10,000, what percentage do you own?");
-        basics.setExerciseAnswer("1%");
-        basics.setHint("Calculate: (Your shares / Total shares) × 100");
-        tutorialMap.put("basics", basics);
-
-        TutorialSection buying = new TutorialSection();
-        buying.setId("buying");
-        buying.setTitle("How to Buy Stocks");
-        buying.setDescription("Step-by-step guide to purchasing stocks");
-        buying.setContent("<h3>Steps to Buy Stocks:</h3><ol><li>Research the company</li><li>Check financial metrics (P/E ratio, earnings, debt)</li><li>Decide on order type (Market vs Limit)</li><li>Place your order</li><li>Monitor your investment</li></ol><h3>Order Types:</h3><ul><li><strong>Market Order:</strong> Buy at current market price</li><li><strong>Limit Order:</strong> Buy only at specified price or better</li><li><strong>Stop Order:</strong> Becomes market order when price hits certain level</li></ul>");
-        buying.setExerciseQuestion("You want to buy ABC stock, but only if it drops to $50. What order type should you use?");
-        buying.setExerciseAnswer("Limit Order");
-        buying.setHint("This order type lets you set a maximum purchase price");
-        tutorialMap.put("buying", buying);
-
-        TutorialSection selling = new TutorialSection();
-        selling.setId("selling");
-        selling.setTitle("When to Sell Stocks");
-        selling.setDescription("Learn strategic approaches to selling stocks");
-        selling.setContent("<h3>Selling Strategies:</h3><ul><li><strong>Profit Taking:</strong> Sell when you've reached your target gain</li><li><strong>Stop Loss:</strong> Sell automatically if price drops too much</li><li><strong>Rebalancing:</strong> Sell to maintain your target asset allocation</li><li><strong>Fundamental Change:</strong> Sell if company fundamentals deteriorate</li></ul><h3>Tax Considerations:</h3><p>Hold investments for over a year for favorable long-term capital gains tax rates.</p>");
-        selling.setExerciseQuestion("You bought XYZ stock at $100 and it's now $150. You want to protect your profits if it drops to $140. What order type should you use?");
-        selling.setExerciseAnswer("Stop Loss Order");
-        selling.setHint("This order triggers a sale when the price falls to a specified level");
-        tutorialMap.put("selling", selling);
-
-        TutorialSection analysis = new TutorialSection();
-        analysis.setId("analysis");
-        analysis.setTitle("Stock Analysis Methods");
-        analysis.setDescription("Learn fundamental and technical analysis techniques");
-        analysis.setContent("<h3>Fundamental Analysis:</h3><ul><li>Examine financial statements</li><li>Analyze P/E ratio, EPS, revenue growth</li><li>Evaluate management team</li><li>Study industry trends</li></ul><h3>Technical Analysis:</h3><ul><li>Study price charts and patterns</li><li>Use indicators like Moving Averages, RSI, MACD</li><li>Identify support and resistance levels</li><li>Analyze trading volume</li></ul>");
-        analysis.setExerciseQuestion("A company has earnings of $5 per share and its stock price is $100. What is its P/E ratio?");
-        analysis.setExerciseAnswer("20");
-        analysis.setHint("P/E ratio = Price per share / Earnings per share");
-        tutorialMap.put("analysis", analysis);
-
-        return tutorialMap;
-    }
-
+    // Basic tutorial operations
     public List<TutorialSection> getAllTutorials() {
         return new ArrayList<>(tutorials.values());
+//        List<TutorialSection> allTutorials = new ArrayList<>(tutorials.values());
+//
+//        for (TutorialSection tutorial : allTutorials) {
+//            if (tutorial.isHasQuiz() && tutorial.getQuiz() == null) {
+//                System.out.println("⚠️  Tutorial " + tutorial.getId() + " has hasQuiz=true but no quiz object!");
+//                // You might want to auto-generate a default quiz here
+//            }
+//        }
+
+//        return allTutorials;
     }
 
     public TutorialSection getTutorial(String tutorialId) {
         return tutorials.get(tutorialId);
     }
 
-    public boolean validateExercise(String tutorialId, String userAnswer) {
-        TutorialSection tutorial = tutorials.get(tutorialId);
-        if (tutorial != null && tutorial.getExerciseAnswer() != null) {
-            return tutorial.getExerciseAnswer().equalsIgnoreCase(userAnswer.trim());
+    // Search and filter methods
+    public List<TutorialSection> searchTutorials(String searchTerm) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return getAllTutorials();
         }
-        return false;
+
+        String lowerSearchTerm = searchTerm.toLowerCase();
+        return tutorials.values().stream()
+                .filter(tutorial ->
+                        tutorial.getTitle().toLowerCase().contains(lowerSearchTerm) ||
+                                tutorial.getDescription().toLowerCase().contains(lowerSearchTerm) ||
+                                tutorial.getContent().toLowerCase().contains(lowerSearchTerm) ||
+                                (tutorial.getKeyPoints() != null && tutorial.getKeyPoints().stream()
+                                        .anyMatch(point -> point.toLowerCase().contains(lowerSearchTerm)))
+                )
+                .collect(Collectors.toList());
     }
+
+    public List<TutorialSection> getTutorialsByCategory(String category) {
+        if (category == null || category.trim().isEmpty()) {
+            return getAllTutorials();
+        }
+
+        String lowerCategory = category.toLowerCase();
+        return tutorials.values().stream()
+                .filter(tutorial -> tutorial.getCategory() != null &&
+                        tutorial.getCategory().toLowerCase().contains(lowerCategory))
+                .collect(Collectors.toList());
+    }
+
+    public List<TutorialSection> getTutorialsByLevel(String level) {
+        if (level == null || level.trim().isEmpty()) {
+            return getAllTutorials();
+        }
+
+        String upperLevel = level.toUpperCase();
+        return tutorials.values().stream()
+                .filter(tutorial -> tutorial.getLevel() != null &&
+                        tutorial.getLevel().toUpperCase().equals(upperLevel))
+                .collect(Collectors.toList());
+    }
+
+    // Exercise validation
+    public boolean validateExercise(String tutorialId, String userAnswer) {
+        TutorialSection tutorial = getTutorial(tutorialId);
+        if (tutorial == null || tutorial.getExercise() == null) {
+            return false;
+        }
+
+        Exercise exercise = tutorial.getExercise();
+        return exercise.validateAnswer(userAnswer);
+    }
+
+    // Quiz operations
+    public Quiz getQuiz(String tutorialId) {
+        TutorialSection tutorial = getTutorial(tutorialId);
+        return tutorial != null ? tutorial.getQuiz() : null;
+    }
+
+    public Map<String, Object> submitQuiz(String tutorialId, String username, String answersJson) {
+        TutorialSection tutorial = getTutorial(tutorialId);
+        if (tutorial == null || tutorial.getQuiz() == null) {
+            return null;
+        }
+
+        Quiz quiz = tutorial.getQuiz();
+        List<Question> questions = quiz.getQuestions();
+
+        // Parse answers
+        Map<Integer, Integer> userAnswers = parseAnswers(answersJson);
+
+        int correctAnswers = 0;
+        for (int i = 0; i < questions.size(); i++) {
+            Question question = questions.get(i);
+            Integer userAnswer = userAnswers.get(i);
+            if (userAnswer != null && question.isCorrectAnswer(userAnswer)) {
+                correctAnswers++;
+            }
+        }
+
+        double score = (double) correctAnswers / questions.size() * 100;
+        boolean passed = score >= quiz.getPassingScore();
+        int intScore = (int) score;
+
+        // ✅ SAVE QUIZ RESULT TO DATABASE
+        boolean saveSuccess = dbHandler.updateQuizResult(username, tutorialId, intScore, passed);
+
+        System.out.println("=== QUIZ RESULT SAVED TO DATABASE ===");
+        System.out.println("User: " + username);
+        System.out.println("Tutorial: " + tutorialId);
+        System.out.println("Score: " + intScore + "%");
+        System.out.println("Passed: " + passed);
+        System.out.println("Save successful: " + saveSuccess);
+        System.out.println("=====================================");
+
+        // Award badges based on performance
+        if (passed) {
+            if (intScore >= 90) {
+                dbHandler.addUserBadge(username, "Quiz Master");
+            }
+            if (intScore == 100) {
+                dbHandler.addUserBadge(username, "Perfect Score");
+            }
+
+            // Update progress if passed
+            updateUserProgress(username, tutorialId, true);
+
+            // Check for certification eligibility
+            checkCertificationEligibility(username, tutorialId);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("score", intScore);
+        result.put("passed", passed);
+        result.put("correctAnswers", correctAnswers);
+        result.put("totalQuestions", questions.size());
+        result.put("passingScore", quiz.getPassingScore());
+
+        // Add detailed results for review
+        List<Map<String, Object>> detailedResults = new ArrayList<>();
+        for (int i = 0; i < questions.size(); i++) {
+            Question question = questions.get(i);
+            Map<String, Object> questionResult = new HashMap<>();
+            questionResult.put("correct", userAnswers.get(i) != null && question.isCorrectAnswer(userAnswers.get(i)));
+            questionResult.put("explanation", question.getExplanation());
+            questionResult.put("userAnswer", userAnswers.get(i));
+            questionResult.put("correctAnswer", question.getCorrectAnswerIndex());
+            detailedResults.add(questionResult);
+        }
+        result.put("detailedResults", detailedResults);
+
+        return result;
+    }
+
+    // Exercise operations
+    public Exercise getExercise(String tutorialId) {
+        TutorialSection tutorial = getTutorial(tutorialId);
+        return tutorial != null ? tutorial.getExercise() : null;
+    }
+
+    // User progress tracking - FIXED VERSION
+    // FIXME
+    public boolean updateUserProgress(String username, String tutorialId, boolean completed) {
+        System.out.println("=== UPDATE USER PROGRESS DEBUG ===");
+        System.out.println("Username: " + username);
+        System.out.println("Tutorial ID: '" + tutorialId + "'");
+        System.out.println("Available tutorials: " + tutorials.keySet());
+
+        // Basic validation
+        if (username == null || username.trim().isEmpty() || tutorialId == null || tutorialId.trim().isEmpty()) {
+            System.out.println("❌ Missing username or tutorialId");
+            return false;
+        }
+
+        // Check if tutorial exists (more flexible validation)
+        boolean tutorialExists = tutorials.containsKey(tutorialId);
+        System.out.println("Tutorial exists in map: " + tutorialExists);
+
+        if (!tutorialExists) {
+            // Try case-insensitive search
+            tutorialExists = tutorials.keySet().stream()
+                    .anyMatch(key -> key.equalsIgnoreCase(tutorialId));
+            System.out.println("Tutorial exists (case-insensitive): " + tutorialExists);
+
+            if (!tutorialExists) {
+                System.out.println("❌ Tutorial not found: " + tutorialId);
+                // For now, let's proceed anyway to test the database flow
+                System.out.println("⚠️  Proceeding with database update despite tutorial not found in map");
+            }
+        }
+
+        // Use database to mark tutorial complete
+        System.out.println("Calling database handler...");
+        boolean success = dbHandler.markTutorialComplete(username, tutorialId);
+
+        System.out.println("Database update successful: " + success);
+
+        if (success && completed) {
+            // Award completion badge
+            dbHandler.addUserBadge(username, "Course Completer");
+
+            // Check for level completion badges
+            checkLevelCompletion(username);
+        }
+
+        System.out.println("=== PROGRESS UPDATE COMPLETE ===");
+        System.out.println("Final result: " + success);
+        System.out.println("===================================");
+
+        return success;
+    }
+
+    public Map<String, Boolean> getUserProgress(String username) {
+        // Get progress from database
+        List<backend.models.UserProgress> progressList = dbHandler.getAllUserProgress(username);
+        Map<String, Boolean> progressMap = new HashMap<>();
+
+        for (backend.models.UserProgress progress : progressList) {
+            progressMap.put(progress.getTutorialId(), progress.isCompleted());
+        }
+
+        return progressMap;
+    }
+
+    // NEW METHOD: Get quiz score for a specific user and tutorial
+    public Integer getQuizScore(String username, String tutorialId) {
+        backend.models.UserProgress progress = dbHandler.getUserProgress(username, tutorialId);
+        return progress != null ? progress.getQuizScore() : null;
+    }
+
+    // NEW METHOD: Get detailed tutorial progress including quiz scores
+    public Map<String, Object> getTutorialProgress(String username, String tutorialId) {
+        backend.models.UserProgress progress = dbHandler.getUserProgress(username, tutorialId);
+        Map<String, Object> progressInfo = new HashMap<>();
+
+        if (progress != null) {
+            progressInfo.put("completed", progress.isCompleted());
+            progressInfo.put("score", progress.getScore());
+            progressInfo.put("quizScore", progress.getQuizScore());
+            progressInfo.put("quizPassed", progress.isQuizPassed());
+            progressInfo.put("timeSpent", progress.getTimeSpent());
+        } else {
+            progressInfo.put("completed", false);
+            progressInfo.put("score", 0);
+            progressInfo.put("quizScore", 0);
+            progressInfo.put("quizPassed", false);
+            progressInfo.put("timeSpent", 0);
+        }
+
+        return progressInfo;
+    }
+
+
+    private Map<Integer, Integer> parseAnswers(String answersJson) {
+        Map<Integer, Integer> answers = new HashMap<>();
+        try {
+            System.out.println("=== PARSING ANSWERS ===");
+            System.out.println("Input answersJson: " + answersJson);
+
+            String unescapedJson = answersJson;
+            if (answersJson.contains("\\\"")) {
+                unescapedJson = answersJson.replace("\\\"", "\"");
+                System.out.println("After unescaping: " + unescapedJson);
+            }
+
+            if (unescapedJson.startsWith("{") && unescapedJson.endsWith("}")) {
+                String content = unescapedJson.substring(1, unescapedJson.length() - 1).trim();
+                System.out.println("Content without braces: " + content);
+
+                if (content.isEmpty()) {
+                    return answers;
+                }
+
+                // Split by commas
+                String[] pairs = content.split(",");
+                System.out.println("Found " + pairs.length + " pairs");
+
+                for (String pair : pairs) {
+                    System.out.println("Processing pair: '" + pair + "'");
+
+                    // Split by the first colon only
+                    int colonIndex = pair.indexOf(':');
+                    if (colonIndex > 0) {
+                        String keyStr = pair.substring(0, colonIndex).trim();
+                        String valueStr = pair.substring(colonIndex + 1).trim();
+
+                        // Remove quotes from key and value
+                        keyStr = keyStr.replace("\"", "");
+                        valueStr = valueStr.replace("\"", "");
+
+                        System.out.println("Key: '" + keyStr + "', Value: '" + valueStr + "'");
+
+                        try {
+                            int questionIndex = Integer.parseInt(keyStr);
+                            int answerIndex = Integer.parseInt(valueStr);
+                            answers.put(questionIndex, answerIndex);
+                            System.out.println("✅ Added: Q" + questionIndex + " = " + answerIndex);
+                        } catch (NumberFormatException e) {
+                            System.err.println("❌ Number format error in pair: " + pair);
+                        }
+                    } else {
+                        System.err.println("❌ No colon found in pair: " + pair);
+                    }
+                }
+            } else {
+                System.err.println("❌ Answers JSON doesn't start/end with braces: " + unescapedJson);
+            }
+
+            System.out.println("Final answers map: " + answers);
+            System.out.println("Total answers: " + answers.size());
+
+        } catch (Exception e) {
+            System.err.println("❌ Error parsing answers: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return answers;
+    }
+
+    private void checkLevelCompletion(String username) {
+        int beginnerCompleted = (int) tutorials.values().stream()
+                .filter(t -> "BEGINNER".equals(t.getLevel()))
+                .filter(t -> {
+                    Map<String, Boolean> progress = getUserProgress(username);
+                    return progress.getOrDefault(t.getId(), false);
+                })
+                .count();
+
+        int intermediateCompleted = (int) tutorials.values().stream()
+                .filter(t -> "INTERMEDIATE".equals(t.getLevel()))
+                .filter(t -> {
+                    Map<String, Boolean> progress = getUserProgress(username);
+                    return progress.getOrDefault(t.getId(), false);
+                })
+                .count();
+
+        int advancedCompleted = (int) tutorials.values().stream()
+                .filter(t -> "ADVANCED".equals(t.getLevel()))
+                .filter(t -> {
+                    Map<String, Boolean> progress = getUserProgress(username);
+                    return progress.getOrDefault(t.getId(), false);
+                })
+                .count();
+
+        // Award level completion badges
+        if (beginnerCompleted >= 3) {
+            dbHandler.addUserBadge(username, "Beginner Trader");
+        }
+        if (intermediateCompleted >= 3) {
+            dbHandler.addUserBadge(username, "Intermediate Investor");
+        }
+        if (advancedCompleted >= 2) {
+            dbHandler.addUserBadge(username, "Advanced Analyst");
+        }
+    }
+
+    private void checkCertificationEligibility(String username, String tutorialId) {
+        // Check if user qualifies for any certifications
+        Map<String, Boolean> progress = getUserProgress(username);
+        long completedCount = progress.values().stream().filter(Boolean::booleanValue).count();
+
+        if (completedCount >= 5) {
+            dbHandler.addUserCertification(username, "stock_market_fundamentals", 85);
+            dbHandler.addUserBadge(username, "Certified Investor");
+        }
+    }
+
+    // Stock Market Tutorials Initialization
+    private void initializeStockMarketTutorials() {
+        // BEGINNER LEVEL TUTORIALS
+
+        // Tutorial 1: Stock Market Fundamentals
+        TutorialSection fundamentals = new TutorialSection(
+                "stock-fundamentals",  // This should match what frontend sends
+                "Stock Market Fundamentals",
+                "Learn the basic concepts of stock market investing and how markets work",
+                "BEGINNER",
+                "FOUNDATION"
+        );
+        fundamentals.setContent("<h3>Welcome to Stock Market Investing</h3>" +
+                "<p>The stock market is where investors buy and sell shares of publicly traded companies. " +
+                "Understanding how it works is the first step toward building wealth through investing.</p>" +
+                "<h4>Key Concepts:</h4>" +
+                "<ul>" +
+                "<li><strong>Stocks:</strong> Represent ownership in a company</li>" +
+                "<li><strong>Bonds:</strong> Debt instruments issued by companies or governments</li>" +
+                "<li><strong>Market Index:</strong> Measures the performance of a group of stocks</li>" +
+                "<li><strong>Bull Market:</strong> Period of rising stock prices</li>" +
+                "<li><strong>Bear Market:</strong> Period of falling stock prices</li>" +
+                "</ul>");
+        fundamentals.setEstimatedMinutes(45);
+        fundamentals.setVideoUrl("https://www.youtube.com/embed/GcZW24SkbHM?si=s2Av7IIVAffAuRyG");
+        fundamentals.setHasVideo(true);
+        fundamentals.setQuiz(QuizData.getStockFundamentalsQuiz());
+//        System.out.println("=== QUIZ INITIALIZATION DEBUG ===");
+//        Quiz fundamentalsQuiz = QuizData.getStockFundamentalsQuiz();
+//        System.out.println("Quiz created: " + (fundamentalsQuiz != null));
+//        System.out.println("Questions list: " + (fundamentalsQuiz.getQuestions() != null));
+//        System.out.println("Questions count: " + (fundamentalsQuiz.getQuestions() != null ? fundamentalsQuiz.getQuestions().size() : 0));
+//        fundamentals.setQuiz(fundamentalsQuiz);
+//        System.out.println("Quiz set on tutorial: " + (fundamentals.getQuiz() != null));
+//        System.out.println("=================================");
+        fundamentals.setHasQuiz(true);
+        fundamentals.setCompletionRate(85.5);
+
+        // Add exercise for fundamentals
+        Exercise fundamentalsExercise = new Exercise();
+        fundamentalsExercise.setQuestion("Calculate the market capitalization: A company has 1 million shares outstanding trading at $50 per share.");
+        fundamentalsExercise.setAnswer("50000000");
+        fundamentalsExercise.setHint("Market Cap = Shares Outstanding × Price Per Share");
+        fundamentalsExercise.setType("CALCULATION");
+        fundamentals.setExercise(fundamentalsExercise);
+        // Add key points
+        fundamentals.addKeyPoint("Stocks represent ownership in companies");
+        fundamentals.addKeyPoint("Market capitalization measures company size");
+        fundamentals.addKeyPoint("Bull markets rise, bear markets fall");
+        fundamentals.addKeyPoint("Diversification reduces risk");
+
+        // Add glossary
+        fundamentals.addGlossaryTerm("Stock", "A type of security that signifies ownership in a corporation");
+        fundamentals.addGlossaryTerm("Dividend", "A portion of a company's earnings paid to shareholders");
+        fundamentals.addGlossaryTerm("IPO", "Initial Public Offering - when a company first sells shares to the public");
+
+        tutorials.put(fundamentals.getId(), fundamentals);
+
+        // Tutorial 2: Reading Stock Charts
+        TutorialSection chartReading = new TutorialSection(
+                "chart-reading",
+                "Reading Stock Charts & Technical Analysis",
+                "Learn how to interpret stock charts and identify trading patterns",
+                "BEGINNER",
+                "TECHNICAL_ANALYSIS"
+        );
+        chartReading.setContent("<h3>Understanding Stock Charts</h3>" +
+                "<p>Stock charts provide visual representations of price movements over time. " +
+                "Learning to read them is essential for technical analysis.</p>" +
+                "<h4>Chart Types:</h4>" +
+                "<ul>" +
+                "<li><strong>Line Charts:</strong> Simple price movement over time</li>" +
+                "<li><strong>Bar Charts:</strong> Show open, high, low, and close prices</li>" +
+                "<li><strong>Candlestick Charts:</strong> Visual representation of price action</li>" +
+                "</ul>");
+        chartReading.setEstimatedMinutes(60);
+        chartReading.setHasVideo(true);
+        chartReading.setHasQuiz(true);
+
+        Exercise chartExercise = new Exercise();
+        chartExercise.setQuestion("Identify the pattern: A stock consistently bounces off support at $50 and resistance at $60.");
+        chartExercise.setAnswer("Trading Range");
+        chartExercise.setHint("This pattern shows price moving between established support and resistance levels");
+        chartExercise.setType("ANALYSIS");
+        chartReading.setExercise(chartExercise);
+
+        tutorials.put(chartReading.getId(), chartReading);
+
+        // Tutorial 3: Risk Management
+        TutorialSection riskManagement = new TutorialSection(
+                "risk-management",
+                "Investment Risk Management",
+                "Learn strategies to protect your capital and manage investment risks",
+                "BEGINNER",
+                "RISK_MANAGEMENT"
+        );
+        riskManagement.setContent("<h3>Managing Investment Risk</h3>" +
+                "<p>Proper risk management is crucial for long-term investing success. " +
+                "Learn how to protect your capital while seeking returns.</p>");
+        riskManagement.setEstimatedMinutes(50);
+        riskManagement.setHasQuiz(true);
+
+        tutorials.put(riskManagement.getId(), riskManagement);
+
+        // INTERMEDIATE LEVEL TUTORIALS
+
+        // Tutorial 4: Fundamental Analysis
+        TutorialSection fundamentalAnalysis = new TutorialSection(
+                "fundamental-analysis",
+                "Fundamental Analysis of Companies",
+                "Learn how to evaluate companies using financial statements and ratios",
+                "INTERMEDIATE",
+                "FUNDAMENTAL_ANALYSIS"
+        );
+        fundamentalAnalysis.setContent("<h3>Analyzing Company Fundamentals</h3>" +
+                "<p>Fundamental analysis involves examining a company's financial health " +
+                "to determine its intrinsic value.</p>");
+        fundamentalAnalysis.setEstimatedMinutes(75);
+        fundamentalAnalysis.setPrerequisites(Arrays.asList("stock-fundamentals"));
+        fundamentalAnalysis.setHasQuiz(true);
+
+        // Add case study
+        CaseStudy appleCase = new CaseStudy(
+                "Apple Inc. Financial Analysis",
+                "Analyzing Apple's financial performance and valuation",
+                "Apple Inc."
+        );
+        appleCase.setTimeframe("Q4 2023");
+        appleCase.addLearningObjective("Calculate key financial ratios");
+        appleCase.addLearningObjective("Evaluate company valuation");
+        appleCase.addData("Revenue", "89.5B");
+        appleCase.addData("Net Income", "22.9B");
+        appleCase.addData("P/E Ratio", "28.5");
+        appleCase.setAnalysis("Apple demonstrates strong profitability with consistent revenue growth...");
+        fundamentalAnalysis.addCaseStudy(appleCase);
+
+        tutorials.put(fundamentalAnalysis.getId(), fundamentalAnalysis);
+
+        // Tutorial 5: Options Trading Basics
+        TutorialSection optionsTrading = new TutorialSection(
+                "options-trading",
+                "Introduction to Options Trading",
+                "Learn the basics of call and put options and how to use them",
+                "INTERMEDIATE",
+                "DERIVATIVES"
+        );
+        optionsTrading.setContent("<h3>Options Trading Fundamentals</h3>" +
+                "<p>Options provide flexibility and leverage in trading strategies.</p>");
+        optionsTrading.setEstimatedMinutes(90);
+        optionsTrading.setPrerequisites(Arrays.asList("stock-fundamentals", "risk-management"));
+        optionsTrading.setHasQuiz(true);
+        optionsTrading.setHasSimulator(true);
+
+        tutorials.put(optionsTrading.getId(), optionsTrading);
+
+        // ADVANCED LEVEL TUTORIALS
+
+        // Tutorial 6: Advanced Technical Analysis
+        TutorialSection advancedTechnical = new TutorialSection(
+                "advanced-technical",
+                "Advanced Technical Analysis Strategies",
+                "Master complex chart patterns and technical indicators",
+                "ADVANCED",
+                "TECHNICAL_ANALYSIS"
+        );
+        advancedTechnical.setContent("<h3>Advanced Technical Analysis</h3>" +
+                "<p>Explore sophisticated technical analysis methods used by professional traders.</p>");
+        advancedTechnical.setEstimatedMinutes(120);
+        advancedTechnical.setPrerequisites(Arrays.asList("chart-reading", "fundamental-analysis"));
+        advancedTechnical.setHasQuiz(true);
+        advancedTechnical.setCertificationId("advanced_technical_analyst");
+
+        tutorials.put(advancedTechnical.getId(), advancedTechnical);
+
+        // Tutorial 7: Portfolio Management
+        TutorialSection portfolioManagement = new TutorialSection(
+                "portfolio-management",
+                "Professional Portfolio Management",
+                "Learn institutional portfolio management strategies and asset allocation",
+                "ADVANCED",
+                "PORTFOLIO_MANAGEMENT"
+        );
+        portfolioManagement.setContent("<h3>Professional Portfolio Management</h3>" +
+                "<p>Discover how institutional investors manage large portfolios and optimize returns.</p>");
+        portfolioManagement.setEstimatedMinutes(100);
+        portfolioManagement.setPrerequisites(Arrays.asList("risk-management", "fundamental-analysis"));
+        portfolioManagement.setHasQuiz(true);
+        portfolioManagement.setCertificationId("portfolio_manager");
+
+        tutorials.put(portfolioManagement.getId(), portfolioManagement);
+
+        // Set up tutorial relationships
+        fundamentals.addNextTutorial("chart-reading");
+        fundamentals.addNextTutorial("risk-management");
+        chartReading.addNextTutorial("fundamental-analysis");
+        riskManagement.addNextTutorial("options-trading");
+        fundamentalAnalysis.addNextTutorial("advanced-technical");
+        fundamentalAnalysis.addNextTutorial("portfolio-management");
+
+        // Initialize sample progress in database
+        try {
+            dbHandler.markTutorialComplete("john_doe", "stock-fundamentals");
+            dbHandler.markTutorialComplete("john_doe", "chart-reading");
+            dbHandler.updateQuizResult("john_doe", "stock-fundamentals", 85, true);
+            dbHandler.updateQuizResult("john_doe", "chart-reading", 78, true);
+
+            dbHandler.markTutorialComplete("jane_smith", "stock-fundamentals");
+            dbHandler.markTutorialComplete("jane_smith", "risk-management");
+            dbHandler.markTutorialComplete("jane_smith", "fundamental-analysis");
+            dbHandler.updateQuizResult("jane_smith", "stock-fundamentals", 92, true);
+            dbHandler.updateQuizResult("jane_smith", "fundamental-analysis", 88, true);
+
+            // Award some badges
+            dbHandler.addUserBadge("john_doe", "Beginner Trader");
+            dbHandler.addUserBadge("jane_smith", "Intermediate Investor");
+            dbHandler.addUserCertification("jane_smith", "stock_market_fundamentals", 90);
+
+            System.out.println("✅ Stock market tutorial data initialized in database");
+        } catch (Exception e) {
+            System.err.println("❌ Error initializing sample data: " + e.getMessage());
+        }
+    }
+
+    // Additional utility methods
+    public List<TutorialSection> getTutorialsByTag(String tag) {
+        return getTutorialsByCategory(tag);
+    }
+
+    public int getCompletedTutorialsCount(String username) {
+        return dbHandler.getCompletedTutorialCount(username);
+    }
+
+    public double getOverallProgress(String username) {
+        int totalTutorials = tutorials.size();
+        int completedCount = getCompletedTutorialsCount(username);
+        return totalTutorials > 0 ? (double) completedCount / totalTutorials * 100 : 0.0;
+    }
+
+    // Get user statistics
+    public Map<String, Object> getUserStatistics(String username) {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("completedTutorials", dbHandler.getCompletedTutorialCount(username));
+        stats.put("totalTimeSpent", dbHandler.getTotalTimeSpent(username));
+        stats.put("averageScore", dbHandler.getAverageScore(username));
+        stats.put("badges", dbHandler.getUserBadges(username));
+        stats.put("certifications", dbHandler.getUserCertifications(username));
+
+        // Determine level based on completed tutorials
+        int completed = dbHandler.getCompletedTutorialCount(username);
+        if (completed >= 5) stats.put("currentLevel", "Expert");
+        else if (completed >= 3) stats.put("currentLevel", "Intermediate");
+        else stats.put("currentLevel", "Beginner");
+
+        return stats;
+    }
+
+    // Get recommended tutorials based on user progress
+    public List<TutorialSection> getRecommendedTutorials(String username) {
+        Map<String, Boolean> progress = getUserProgress(username);
+        List<TutorialSection> recommendations = new ArrayList<>();
+
+        // Find next tutorials based on completed ones
+        for (TutorialSection tutorial : tutorials.values()) {
+            if (!progress.getOrDefault(tutorial.getId(), false)) {
+                // Check if prerequisites are met
+                boolean prerequisitesMet = true;
+                if (tutorial.getPrerequisites() != null) {
+                    for (String prereq : tutorial.getPrerequisites()) {
+                        if (!progress.getOrDefault(prereq, false)) {
+                            prerequisitesMet = false;
+                            break;
+                        }
+                    }
+                }
+                if (prerequisitesMet) {
+                    recommendations.add(tutorial);
+                }
+            }
+        }
+
+        return recommendations;
+    }
+
+    // Return tutorial with user progress
+    public Map<String, Object> getTutorialForUser(String username, String tutorialId) {
+        TutorialSection tutorial = getTutorial(tutorialId);
+        if (tutorial == null) {
+            return null; // Tutorial not found
+        }
+
+        Map<String, Object> progress = getTutorialProgress(username, tutorialId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("tutorial", tutorial);
+        response.put("progress", progress);
+
+        return response;
+    }
+
 }

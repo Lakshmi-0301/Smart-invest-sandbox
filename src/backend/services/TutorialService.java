@@ -452,6 +452,7 @@ public class TutorialService {
         chartReading.setEstimatedMinutes(60);
         chartReading.setVideoUrl("https://www.youtube.com/embed/J-ntsk7Dsd0?si=0Nor5ytnxK3NHr8e");
         chartReading.setHasVideo(true);
+        chartReading.setQuiz(QuizData.getChartReadingQuiz());
         chartReading.setHasQuiz(true);
 
         Exercise chartExercise = new Exercise();
@@ -460,6 +461,8 @@ public class TutorialService {
         chartExercise.setHint("This pattern shows price moving between established support and resistance levels");
         chartExercise.setType("ANALYSIS");
         chartReading.setExercise(chartExercise);
+        chartReading.setHasExercise(true);
+
 
         tutorials.put(chartReading.getId(), chartReading);
 
@@ -471,10 +474,44 @@ public class TutorialService {
                 "BEGINNER",
                 "RISK_MANAGEMENT"
         );
-        riskManagement.setContent("<h3>Managing Investment Risk</h3>" +
-                "<p>Proper risk management is crucial for long-term investing success. " +
-                "Learn how to protect your capital while seeking returns.</p>");
+        riskManagement.setContent(
+                "<h3>Managing Investment Risk</h3>" +
+                        "<p>Proper risk management is crucial for long-term investing success. It helps investors " +
+                        "protect their capital while aiming for consistent returns, and ensures that unexpected market events " +
+                        "do not severely impact your portfolio.</p>" +
+
+                        "<h4>Key Principles of Risk Management</h4>" +
+                        "<ul>" +
+                        "<li><strong>Diversification:</strong> Spread investments across different asset classes, sectors, and geographies to reduce portfolio risk.</li>" +
+                        "<li><strong>Asset Allocation:</strong> Allocate your capital according to risk tolerance and investment goals, balancing stocks, bonds, and other assets.</li>" +
+                        "<li><strong>Risk-Return Trade-Off:</strong> Higher potential returns come with higher risk. Understand how much risk you are willing to take for the returns you desire.</li>" +
+                        "<li><strong>Stop-Loss Strategies:</strong> Implement stop-loss orders to automatically sell an asset if it falls below a predetermined price, limiting potential losses.</li>" +
+                        "<li><strong>Regular Monitoring:</strong> Continuously review your portfolio and market conditions to adjust strategies proactively.</li>" +
+                        "</ul>" +
+
+                        "<h4>Types of Investment Risks</h4>" +
+                        "<ul>" +
+                        "<li><strong>Market Risk:</strong> Risk of losses due to overall market movements.</li>" +
+                        "<li><strong>Credit Risk:</strong> Risk that a bond issuer or counterparty may default.</li>" +
+                        "<li><strong>Liquidity Risk:</strong> Risk of being unable to quickly sell an investment without significant loss.</li>" +
+                        "<li><strong>Inflation Risk:</strong> Risk that returns may not keep pace with inflation.</li>" +
+                        "</ul>" +
+
+                        "<h4>Practical Risk Management Tips</h4>" +
+                        "<ul>" +
+                        "<li>Set clear investment goals and define your risk tolerance before investing.</li>" +
+                        "<li>Use diversification and asset allocation to spread and control risk.</li>" +
+                        "<li>Regularly rebalance your portfolio to maintain the desired risk level.</li>" +
+                        "<li>Stay informed about market trends and economic indicators.</li>" +
+                        "<li>Consider using hedging instruments like options or bonds for additional protection.</li>" +
+                        "</ul>"
+
+        );
+
         riskManagement.setEstimatedMinutes(50);
+        riskManagement.setVideoUrl("https://www.youtube.com/embed/IP-E75FGFkU?si=_CHcx0TfVt0IIy1s");
+        riskManagement.setHasVideo(true);
+        riskManagement.setQuiz(QuizData.getInvestmentRiskManagementQuiz());
         riskManagement.setHasQuiz(true);
 
         tutorials.put(riskManagement.getId(), riskManagement);
@@ -489,13 +526,35 @@ public class TutorialService {
                 "INTERMEDIATE",
                 "FUNDAMENTAL_ANALYSIS"
         );
-        fundamentalAnalysis.setContent("<h3>Analyzing Company Fundamentals</h3>" +
-                "<p>Fundamental analysis involves examining a company's financial health " +
-                "to determine its intrinsic value.</p>");
+        fundamentalAnalysis.setContent(
+                "<h3>Analyzing Company Fundamentals</h3>" +
+                        "<p>Fundamental analysis involves examining a company's financial health " +
+                        "to determine its intrinsic value and long-term growth potential. Investors " +
+                        "study both quantitative and qualitative factors to make informed decisions.</p>" +
+
+                        "<h4>Key Components of Fundamental Analysis</h4>" +
+                        "<ul>" +
+                        "<li><strong>Financial Statements:</strong> Analyze the Income Statement, Balance Sheet, and Cash Flow Statement to evaluate profitability, liquidity, and solvency.</li>" +
+                        "<li><strong>Financial Ratios:</strong> Use ratios like Price-to-Earnings (P/E), Return on Equity (ROE), Debt-to-Equity, and Current Ratio to compare performance against industry benchmarks.</li>" +
+                        "<li><strong>Company Management:</strong> Assess the quality and experience of the company's leadership team and their strategic decisions.</li>" +
+                        "<li><strong>Industry and Market Trends:</strong> Examine the competitive environment, regulatory factors, and market demand that affect the company's growth.</li>" +
+                        "<li><strong>Growth Potential:</strong> Evaluate opportunities for expansion, product development, and innovation.</li>" +
+                        "</ul>" +
+
+                        "<h4>Benefits of Fundamental Analysis</h4>" +
+                        "<ul>" +
+                        "<li>Helps determine whether a stock is undervalued or overvalued.</li>" +
+                        "<li>Provides insights for long-term investment decisions.</li>" +
+                        "<li>Reduces the risk of making speculative investments based on short-term market fluctuations.</li>" +
+                        "</ul>"
+        );
+
         fundamentalAnalysis.setEstimatedMinutes(75);
         fundamentalAnalysis.setPrerequisites(Arrays.asList("stock-fundamentals"));
+        fundamentalAnalysis.setQuiz(QuizData.getFundamentalAnalysisOfCompaniesQuiz());
         fundamentalAnalysis.setHasQuiz(true);
-
+        fundamentalAnalysis.setVideoUrl("https://www.youtube.com/embed/3BOE1A8HXeE?si=0zdTcXpCfLw6hcCr");
+        fundamentalAnalysis.setHasVideo(true);
         // Add case study
         CaseStudy appleCase = new CaseStudy(
                 "Apple Inc. Financial Analysis",
@@ -521,12 +580,47 @@ public class TutorialService {
                 "INTERMEDIATE",
                 "DERIVATIVES"
         );
-        optionsTrading.setContent("<h3>Options Trading Fundamentals</h3>" +
-                "<p>Options provide flexibility and leverage in trading strategies.</p>");
+        optionsTrading.setContent(
+                "<h3>Options Trading Fundamentals</h3>" +
+                        "<p>Options are financial derivatives that give traders the right, but not the obligation, " +
+                        "to buy or sell an underlying asset at a predetermined price within a specified timeframe. " +
+                        "They provide flexibility, leverage, and risk management opportunities in trading strategies.</p>" +
+
+                        "<h4>Types of Options</h4>" +
+                        "<ul>" +
+                        "<li><strong>Call Options:</strong> Give the holder the right to buy an asset at a specific price.</li>" +
+                        "<li><strong>Put Options:</strong> Give the holder the right to sell an asset at a specific price.</li>" +
+                        "</ul>" +
+
+                        "<h4>Key Components of Options</h4>" +
+                        "<ul>" +
+                        "<li><strong>Strike Price:</strong> The price at which the asset can be bought or sold.</li>" +
+                        "<li><strong>Expiration Date:</strong> The date by which the option must be exercised.</li>" +
+                        "<li><strong>Premium:</strong> The cost paid to purchase the option.</li>" +
+                        "<li><strong>Underlying Asset:</strong> The security (stock, index, commodity, etc.) on which the option is based.</li>" +
+                        "</ul>" +
+
+                        "<h4>Benefits of Options Trading</h4>" +
+                        "<ul>" +
+                        "<li>Provides leverage to control larger positions with less capital.</li>" +
+                        "<li>Helps hedge existing positions to reduce risk exposure.</li>" +
+                        "<li>Allows traders to implement complex strategies for bullish, bearish, or neutral markets.</li>" +
+                        "</ul>" +
+
+                        "<h4>Risks of Options Trading</h4>" +
+                        "<ul>" +
+                        "<li>Options can expire worthless, leading to a total loss of the premium paid.</li>" +
+                        "<li>Complex strategies can increase the risk of losses if not properly managed.</li>" +
+                        "<li>Requires careful monitoring of time decay, volatility, and market movements.</li>" +
+                        "</ul>"
+        );
+
         optionsTrading.setEstimatedMinutes(90);
         optionsTrading.setPrerequisites(Arrays.asList("stock-fundamentals", "risk-management"));
+        optionsTrading.setQuiz(QuizData.getIntroductionToOptionsTradingQuiz());
         optionsTrading.setHasQuiz(true);
-        optionsTrading.setHasSimulator(true);
+        optionsTrading.setVideoUrl("https://www.youtube.com/embed/4HMm6mBvGKE?si=weBTcVwvhdOc4tlo");
+        optionsTrading.setHasVideo(true);
 
         tutorials.put(optionsTrading.getId(), optionsTrading);
 
@@ -540,13 +634,42 @@ public class TutorialService {
                 "ADVANCED",
                 "TECHNICAL_ANALYSIS"
         );
-        advancedTechnical.setContent("<h3>Advanced Technical Analysis</h3>" +
-                "<p>Explore sophisticated technical analysis methods used by professional traders.</p>");
+        advancedTechnical.setContent(
+                "<h3>Advanced Technical Analysis</h3>" +
+                        "<p>Advanced technical analysis involves the use of sophisticated tools, indicators, and charting techniques " +
+                        "to predict future price movements and identify profitable trading opportunities. It builds on basic technical analysis " +
+                        "concepts like trendlines, support and resistance, and price patterns.</p>" +
+
+                        "<h4>Key Advanced Techniques</h4>" +
+                        "<ul>" +
+                        "<li><strong>Fibonacci Retracement and Extensions:</strong> These tools help identify potential reversal and target levels " +
+                        "based on key Fibonacci ratios (23.6%, 38.2%, 50%, 61.8%, etc.). Traders often use them to predict corrections or continuation patterns.</li>" +
+
+                        "<li><strong>Elliott Wave Theory:</strong> This method analyzes price movements as a series of repeating waves " +
+                        "that reflect investor psychology and market sentiment. Understanding the wave structure can help traders forecast long-term trends.</li>" +
+
+                        "<li><strong>Ichimoku Cloud:</strong> A comprehensive indicator that shows support, resistance, trend direction, and momentum " +
+                        "in one view. It helps traders make quick and informed decisions about potential entry and exit points.</li>" +
+
+                        "<li><strong>Volume and Market Breadth Analysis:</strong> Evaluating volume trends and the number of advancing vs. declining stocks " +
+                        "provides insight into market strength and helps confirm price movements.</li>" +
+
+                        "<li><strong>Multi-Timeframe Analysis:</strong> Comparing signals from different timeframes (e.g., daily, weekly, monthly charts) " +
+                        "can enhance accuracy by confirming long-term trends and short-term momentum alignment.</li>" +
+                        "</ul>"
+
+        );
+
         advancedTechnical.setEstimatedMinutes(120);
         advancedTechnical.setPrerequisites(Arrays.asList("chart-reading", "fundamental-analysis"));
+        advancedTechnical.setQuiz(QuizData.getAdvancedTechnicalAnalysisStrategiesQuiz());
         advancedTechnical.setHasQuiz(true);
+        advancedTechnical.setVideoUrl("https://www.youtube.com/embed/eynxyoKgpng?si=yp_V1nC_8sQ5GjEd");
+        advancedTechnical.setHasVideo(true);
         advancedTechnical.setCertificationId("advanced_technical_analyst");
-
+        advancedTechnical.addKeyPoint("Fibonacci Retracement Levels use ratios to identify potential support and resistance zones");
+        advancedTechnical.addKeyPoint("Elliott Wave Theory posits that markets move in repetitive wave patterns");
+        advancedTechnical.addKeyPoint("Ichimoku Cloud is a multi-faceted indicator that reveals dynamic support/resistance, trend direction, and momentum");
         tutorials.put(advancedTechnical.getId(), advancedTechnical);
 
         // Tutorial 7: Portfolio Management
@@ -557,13 +680,43 @@ public class TutorialService {
                 "ADVANCED",
                 "PORTFOLIO_MANAGEMENT"
         );
-        portfolioManagement.setContent("<h3>Professional Portfolio Management</h3>" +
-                "<p>Discover how institutional investors manage large portfolios and optimize returns.</p>");
+        portfolioManagement.setContent(
+                "<h3>Professional Portfolio Management</h3>" +
+                        "<p>Portfolio management is the art and science of selecting and overseeing a group of investments " +
+                        "that meet the long-term financial goals and risk tolerance of an investor. Professional portfolio managers " +
+                        "use data-driven strategies, diversification, and continuous monitoring to optimize returns while minimizing risk.</p>" +
+
+                        "<h4>Core Principles of Portfolio Management</h4>" +
+                        "<ul>" +
+                        "<li><strong>Asset Allocation:</strong> The process of distributing investments across asset classes " +
+                        "such as equities, bonds, and alternative assets to achieve a balanced risk-return profile.</li>" +
+
+                        "<li><strong>Diversification:</strong> Reducing exposure to any single investment or sector " +
+                        "by holding a variety of assets that respond differently to market conditions.</li>" +
+
+                        "<li><strong>Risk Assessment:</strong> Evaluating the investor’s risk tolerance, investment horizon, and market conditions " +
+                        "to determine appropriate portfolio composition and strategy.</li>" +
+
+                        "<li><strong>Performance Evaluation:</strong> Using benchmarks and risk-adjusted metrics such as the Sharpe Ratio, " +
+                        "Alpha, and Beta to measure portfolio performance relative to the market.</li>" +
+
+                        "<li><strong>Rebalancing:</strong> Periodically adjusting portfolio weights to maintain the desired asset allocation " +
+                        "as market prices change, ensuring the portfolio stays aligned with investment goals.</li>" +
+                        "</ul>"
+
+        );
+
         portfolioManagement.setEstimatedMinutes(100);
         portfolioManagement.setPrerequisites(Arrays.asList("risk-management", "fundamental-analysis"));
+        portfolioManagement.setQuiz(QuizData.getProfessionalPortfolioManagementQuiz());
         portfolioManagement.setHasQuiz(true);
+        portfolioManagement.setVideoUrl("https://www.youtube.com/embed/wZsg4ldP6vA?si=LHFTCMYa5mDV6kOf");
+        portfolioManagement.setHasVideo(true);
         portfolioManagement.setCertificationId("portfolio_manager");
-
+        portfolioManagement.addKeyPoint("Asset Allocation: Distributes investments across asset classes to balance risk and return.");
+        portfolioManagement.addKeyPoint("Portfolio Rebalancing: Adjusts holdings periodically to maintain target risk levels.");
+        portfolioManagement.addKeyPoint("Sharpe Ratio: Measures risk-adjusted returns to evaluate portfolio efficiency.");
+        portfolioManagement.addKeyPoint("Behavioral Finance: Mitigates investor biases for rational decision-making.");
         tutorials.put(portfolioManagement.getId(), portfolioManagement);
 
         // Set up tutorial relationships

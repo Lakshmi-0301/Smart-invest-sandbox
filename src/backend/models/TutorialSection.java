@@ -28,6 +28,7 @@ public class TutorialSection {
     private boolean hasVideo;
     private boolean hasSimulator;
     private boolean hasQuiz;
+    private boolean hasExercise;
     private List<String> prerequisites;
     private List<String> nextTutorials;
     private String certificationId;
@@ -103,6 +104,8 @@ public class TutorialSection {
     public boolean isHasVideo() { return hasVideo; }
     public void setHasVideo(boolean hasVideo) { this.hasVideo = hasVideo; }
 
+    public boolean isHasExercise(){return hasExercise;}
+    public void setHasExercise(boolean hasExercise) { this.hasExercise = hasExercise; }
     public boolean isHasSimulator() { return hasSimulator; }
     public void setHasSimulator(boolean hasSimulator) { this.hasSimulator = hasSimulator; }
 

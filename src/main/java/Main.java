@@ -698,7 +698,7 @@ public class Main {
 
     private static String convertTutorialToJson(TutorialSection tutorial) {
         return String.format(
-                "{\"id\":\"%s\",\"title\":\"%s\",\"description\":\"%s\",\"level\":\"%s\",\"category\":\"%s\",\"estimatedMinutes\":%d,\"completionRate\":%.2f,\"videoUrl\":\"%s\",\"content\":\"%s\",\"infographics\":%s,\"keyPoints\":%s,\"glossary\":%s,\"quiz\":%s,\"hasVideo\":%b,\"hasSimulator\":%b,\"hasQuiz\":%b,\"prerequisites\":%s,\"nextTutorials\":%s,\"certificationId\":\"%s\"}",
+                "{\"id\":\"%s\",\"title\":\"%s\",\"description\":\"%s\",\"level\":\"%s\",\"category\":\"%s\",\"estimatedMinutes\":%d,\"completionRate\":%.2f,\"videoUrl\":\"%s\",\"content\":\"%s\",\"infographics\":%s,\"keyPoints\":%s,\"glossary\":%s,\"quiz\":%s,\"exercise\":%s,\"hasVideo\":%b,\"hasSimulator\":%b,\"hasQuiz\":%b,\"prerequisites\":%s,\"nextTutorials\":%s,\"certificationId\":\"%s\"}",
                 escapeJson(tutorial.getId()),
                 escapeJson(tutorial.getTitle()),
                 escapeJson(tutorial.getDescription()),
@@ -713,7 +713,7 @@ public class Main {
 
                 convertMapToJson(tutorial.getGlossary()),
                 convertQuizToJson(tutorial.getQuiz()),
-
+                convertExerciseToJson(tutorial.getExercise()),
                 tutorial.isHasVideo(),
                 tutorial.isHasSimulator(),
                 tutorial.isHasQuiz(),

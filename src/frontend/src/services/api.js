@@ -149,29 +149,44 @@ getExercise: async (tutorialId) => {
 },
 
 // Validate exercise - UPDATED to match Main.java routes
+//validateExercise: async (tutorialId, answer, username) => {
+//    try {
+//        const response = await axios.post(`${API_BASE}/tutorial/validate`, {
+//            tutorialId: tutorialId,
+//            answer: answer,
+//            username: username
+//        });
+//        return response.data.correct;
+//    } catch (error) {
+//        console.error('Error validating exercise:', error);
+//        return false;
+//    }
+//},
 validateExercise: async (tutorialId, answer, username) => {
+    if (!tutorialId || !answer || !username) {
+        console.error("Missing fields for exercise validation", { tutorialId, answer, username });
+        return false;
+    }
+
     try {
-        const response = await axios.post(`${API_BASE}/tutorial/validate`, {
-            tutorialId: tutorialId,
-            answer: answer,
-            username: username
-        });
+        console.log("Sending exercise validation:", { tutorialId, answer, username });
+
+        const response = await axios.post(
+            `${API_BASE}/tutorial/${tutorialId}/validate`,
+            { answer, username }, // ✅ removed tutorialId from body
+            { headers: { "Content-Type": "application/json" } }
+        );
+
+        console.log("Backend response:", response.data);
         return response.data.correct;
     } catch (error) {
-        console.error('Error validating exercise:', error);
+        console.error('Error validating exercise:', error.response?.data || error.message);
         return false;
     }
 },
+
+
     // Get tutorial quiz
-//    getQuiz: async (tutorialId) => {
-//        try {
-//            const response = await axios.get(`${API_BASE}/tutorials/${tutorialId}/quiz`);
-//            return response.data.data;
-//        } catch (error) {
-//            console.error(`Error fetching quiz for ${tutorialId}:`, error);
-//            return null;
-//        }
-//    },
 
     // Get tutorial exercise
 //    getExercise: async (tutorialId) => {
@@ -198,19 +213,7 @@ validateExercise: async (tutorialId, answer, username) => {
 //        }
 //    },
 //
-//    // Submit quiz
-//    submitQuiz: async (tutorialId, answers, username) => {
-//        try {
-//            const response = await axios.post(`${API_BASE}/tutorials/${tutorialId}/quiz`, {
-//                answers: answers,
-//                username: username
-//            });
-//            return response.data.data;
-//        } catch (error) {
-//            console.error('Error submitting quiz:', error);
-//            return { success: false, error: 'Failed to submit quiz' };
-//        }
-//    },
+
 
     // Get user progress
     getUserProgress: async (username) => {

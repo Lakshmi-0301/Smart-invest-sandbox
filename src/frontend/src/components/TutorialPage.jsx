@@ -153,6 +153,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
         }
     };
 
+
     const markAsComplete = async () => {
         try {
             console.log('🔍 markAsComplete called:');

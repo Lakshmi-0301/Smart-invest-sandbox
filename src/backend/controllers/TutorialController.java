@@ -92,7 +92,34 @@ public class TutorialController {
                 return "{\"success\":false,\"error\":\"Failed to search tutorials\"}";
             }
         });
+        post("/api/tutorials/:id/validate", (req, res) -> {
+            try {
+                String tutorialId = req.params(":id");
+                Map<String, Object> body = gson.fromJson(req.body(), Map.class);
+                String userAnswer = (String) body.get("answer");
+                String username = (String) body.get("username");
 
+                if (userAnswer == null || userAnswer.trim().isEmpty()) {
+                    res.status(400);
+                    return "{\"success\":false,\"error\":\"Answer is required\"}";
+                }
+
+                boolean isCorrect = tutorialService.validateExercise(tutorialId, userAnswer);
+
+                // Update progress if answer is correct
+                if (isCorrect && username != null) {
+                    tutorialService.updateUserProgress(username, tutorialId, true);
+                }
+
+                Map<String, Object> responseMap = new HashMap<>();
+                responseMap.put("success", true);
+                responseMap.put("correct", isCorrect);
+                return gson.toJson(responseMap);
+            } catch (Exception e) {
+                res.status(500);
+                return "{\"success\":false,\"error\":\"Failed to validate exercise\"}";
+            }
+        });
         // Get specific tutorial
         get("/api/tutorials/:id", (req, res) -> {
             try {
@@ -154,34 +181,7 @@ public class TutorialController {
         });
 
         // Validate exercise
-        post("/api/tutorials/:id/validate", (req, res) -> {
-            try {
-                String tutorialId = req.params(":id");
-                Map<String, Object> body = gson.fromJson(req.body(), Map.class);
-                String userAnswer = (String) body.get("answer");
-                String username = (String) body.get("username");
 
-                if (userAnswer == null || userAnswer.trim().isEmpty()) {
-                    res.status(400);
-                    return "{\"success\":false,\"error\":\"Answer is required\"}";
-                }
-
-                boolean isCorrect = tutorialService.validateExercise(tutorialId, userAnswer);
-
-                // Update progress if answer is correct
-                if (isCorrect && username != null) {
-                    tutorialService.updateUserProgress(username, tutorialId, true);
-                }
-
-                Map<String, Object> responseMap = new HashMap<>();
-                responseMap.put("success", true);
-                responseMap.put("correct", isCorrect);
-                return gson.toJson(responseMap);
-            } catch (Exception e) {
-                res.status(500);
-                return "{\"success\":false,\"error\":\"Failed to validate exercise\"}";
-            }
-        });
 
         // Submit quiz
         post("/api/tutorials/:id/quiz", (req, res) -> {

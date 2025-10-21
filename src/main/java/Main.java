@@ -35,7 +35,7 @@ public class Main {
         server.createContext("/api/tutorial/quiz", new TutorialQuizHandler());
         server.createContext("/api/tutorial/exercise", new TutorialExerciseHandler());
         server.createContext("/api/health", new HealthHandler());
-
+        server.createContext("/api/tutorials/progress/complete", new TutorialProgressCompleteHandler());
         server.setExecutor(null);
         server.start();
         System.out.println("Server started on port " + port);
@@ -396,8 +396,15 @@ public class Main {
             }
 
             Map<String, Boolean> progress = tutorialService.getUserProgress(username);
+            Map<String, Object> stats = tutorialService.getUserStatistics(username); // Add this line
+
             String progressJson = convertProgressToJson(progress);
-            sendJsonResponse(exchange, 200, "{\"success\":true,\"data\":" + progressJson + "}");
+            String statsJson = convertObjectToJson(stats); // Convert stats to JSON
+
+            // Return both progress and statistics
+            String response = String.format("{\"success\":true,\"data\":%s,\"statistics\":%s}",
+                    progressJson, statsJson);
+            sendJsonResponse(exchange, 200, response);
         }
 
         private String convertProgressToJson(Map<String, Boolean> progress) {
@@ -418,7 +425,40 @@ public class Main {
             return json.toString();
         }
     }
+    static class TutorialProgressCompleteHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            setCorsHeaders(exchange);
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+            if (!"POST".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(405, -1);
+                return;
+            }
 
+            try {
+                String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                String username = extractValue(requestBody, "username");
+                String tutorialId = extractValue(requestBody, "tutorialId");
+
+                if (username == null || tutorialId == null) {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"error\":\"Missing required fields\"}");
+                    return;
+                }
+
+                boolean success = tutorialService.updateUserProgress(username, tutorialId, true);
+                if (success) {
+                    sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Tutorial marked as complete\"}");
+                } else {
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"error\":\"Failed to mark tutorial complete\"}");
+                }
+            } catch (Exception e) {
+                sendJsonResponse(exchange, 500, "{\"success\":false,\"error\":\"Internal server error\"}");
+            }
+        }
+    }
     static class TutorialQuizHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {

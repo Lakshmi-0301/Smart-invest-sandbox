@@ -24,6 +24,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
     const [exerciseResult, setExerciseResult] = useState(null);
     const [tutorialProgress, setTutorialProgress] = useState({});
     const [recommendedTutorials, setRecommendedTutorials] = useState([]);
+    const [showCompletion, setShowCompletion] = useState(false);
 
     useEffect(() => {
         loadTutorials();
@@ -38,6 +39,14 @@ const TutorialPage = ({ onBackToHome, user }) => {
             loadTutorialProgress();
         }
     }, [user, activeSection]);
+
+    useEffect(() => {
+        if (tutorialProgress.completed || tutorialProgress.quizPassed) {
+            setShowCompletion(true);
+            const timer = setTimeout(() => setShowCompletion(false), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [tutorialProgress.completed, tutorialProgress.quizPassed]);
 
     const loadTutorials = async () => {
         try {
@@ -122,9 +131,39 @@ const TutorialPage = ({ onBackToHome, user }) => {
         try {
             const results = await tutorialAPI.submitQuiz(activeSection, quizAnswers, user.username);
             setQuizResults(results);
-            loadUserProgress();
-            loadTutorialProgress();
-            loadRecommendedTutorials();
+
+            // Refresh progress data immediately after quiz submission
+            await Promise.all([
+                loadUserProgress(),
+                loadTutorialProgress(),
+                loadRecommendedTutorials()
+            ]);
+
+            // If quiz was passed OR score is high enough, update progress
+            if (results.passed || results.score >= 80) {
+                setTutorialProgress(prev => ({
+                    ...prev,
+                    completed: true,
+                    quizPassed: results.passed,
+                    quizScore: results.score
+                }));
+
+                // Also update user progress state
+                setUserProgress(prev => ({
+                    ...prev,
+                    data: {
+                        ...prev.data,
+                        [activeSection]: true
+                    }
+                }));
+
+                // Show completion message for high scores
+                if (results.score >= 90) {
+                    alert(`🎉 Excellent! You scored ${results.score}% and completed the tutorial!`);
+                } else if (results.passed) {
+                    alert(`✅ Great job! You passed with ${results.score}% and completed the tutorial!`);
+                }
+            }
         } catch (error) {
             console.error('Failed to submit quiz:', error);
         }
@@ -141,9 +180,20 @@ const TutorialPage = ({ onBackToHome, user }) => {
             setExerciseResult(isCorrect);
             if (isCorrect) {
                 alert('Correct! Well done!');
-                loadUserProgress();
-                loadTutorialProgress();
-                loadRecommendedTutorials();
+
+                // Refresh progress data after successful exercise
+                await Promise.all([
+                    loadUserProgress(),
+                    loadTutorialProgress(),
+                    loadRecommendedTutorials()
+                ]);
+
+                // Update local state
+                setTutorialProgress(prev => ({
+                    ...prev,
+                    completed: true
+                }));
+
             } else {
                 alert('Not quite right. Try again or use the hint!');
             }
@@ -152,7 +202,6 @@ const TutorialPage = ({ onBackToHome, user }) => {
             alert('Error validating answer. Please try again.');
         }
     };
-
 
     const markAsComplete = async () => {
         try {
@@ -176,9 +225,20 @@ const TutorialPage = ({ onBackToHome, user }) => {
 
             if (result.success) {
                 alert('Tutorial marked as complete!');
-                loadUserProgress();
-                loadTutorialProgress();
-                loadRecommendedTutorials();
+
+                // Force refresh all progress data
+                await Promise.all([
+                    loadUserProgress(),
+                    loadTutorialProgress(),
+                    loadRecommendedTutorials()
+                ]);
+
+                // Force a re-render by updating state
+                setTutorialProgress(prev => ({
+                    ...prev,
+                    completed: true
+                }));
+
             } else {
                 alert(`Failed to mark as complete: ${result.error || 'Unknown error'}`);
             }
@@ -187,8 +247,6 @@ const TutorialPage = ({ onBackToHome, user }) => {
             alert('Failed to mark tutorial as complete. Please try again.');
         }
     };
-
-
 
     const getLevelColor = (level) => {
         switch (level) {
@@ -205,7 +263,22 @@ const TutorialPage = ({ onBackToHome, user }) => {
 
     const getProgressPercentage = () => {
         const total = tutorials ? Object.keys(tutorials).length : 0;
-        const completed = userProgress?.statistics?.completedTutorials || 0;
+
+        // Use both possible sources for completed count
+        const completedFromStatistics = userProgress?.statistics?.completedTutorials || 0;
+        const completedFromData = userProgress?.data ? Object.values(userProgress.data).filter(Boolean).length : 0;
+
+        // Use whichever is available
+        const completed = completedFromStatistics > 0 ? completedFromStatistics : completedFromData;
+
+        console.log('📊 Progress Calculation:', {
+            totalTutorials: total,
+            completedFromStatistics: completedFromStatistics,
+            completedFromData: completedFromData,
+            finalCompleted: completed,
+            percentage: total > 0 ? (completed / total) * 100 : 0
+        });
+
         return total > 0 ? (completed / total) * 100 : 0;
     };
 
@@ -235,6 +308,19 @@ const TutorialPage = ({ onBackToHome, user }) => {
 
     return (
         <div className="tutorial-page">
+            {/* Completion Celebration */}
+            {showCompletion && (
+                <div className="completion-celebration">
+                    <div className="celebration-content">
+                        <h3>🎉 Tutorial Completed! 🎉</h3>
+                        <p>Great job completing "{currentTutorial.title}"!</p>
+                        {tutorialProgress.quizScore > 0 && (
+                            <p>Quiz Score: <strong>{tutorialProgress.quizScore}%</strong></p>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <header className="tutorial-header">
                 <div className="header-content">
                     <button onClick={onBackToHome} className="back-btn">← Back to Home</button>
@@ -374,7 +460,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                                 {tutorialProgress && (
                                     <div className="current-progress">
                                         <span style={{color: "#666666"}}>Your Progress: </span>
-                                        {tutorialProgress.completed ? (
+                                        {tutorialProgress.completed || tutorialProgress.quizPassed ? (
                                             <span style={{color: '#28a745', fontWeight: 'bold'}}>✅ Completed</span>
                                         ) : tutorialProgress.timeSpent > 0 ? (
                                             <span style={{color: '#ffc107', fontWeight: 'bold'}}>🔄 In Progress</span>
@@ -396,7 +482,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                                     📚 Learning Content
                                 </button>
                                 {currentTutorial.hasVideo && (
-                                    <button className={`tab ${activeTab === 'video' ? 'active' : ''}`} onClick={() => {console.log(currentTutorial);setActiveTab('video')}}>
+                                    <button className={`tab ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>
                                         🎥 Video Lesson
                                     </button>
                                 )}
@@ -658,19 +744,19 @@ const TutorialPage = ({ onBackToHome, user }) => {
                                     </div>
                                 )}
 
-                            {activeTab === 'glossary' && currentTutorial.glossary && (
-                                <div className="glossary-content">
-                                    <h3>Investment Glossary</h3>
-                                    <div className="glossary-grid">
-                                        {Object.entries(currentTutorial.glossary).map(([term, definition]) => (
-                                            <div key={term} className="glossary-item">
-                                                <dt className="glossary-term">{term}</dt>
-                                                <dd className="glossary-definition">{definition}</dd>
-                                            </div>
-                                        ))}
+                                {activeTab === 'glossary' && currentTutorial.glossary && (
+                                    <div className="glossary-content">
+                                        <h3>Investment Glossary</h3>
+                                        <div className="glossary-grid">
+                                            {Object.entries(currentTutorial.glossary).map(([term, definition]) => (
+                                                <div key={term} className="glossary-item">
+                                                    <dt className="glossary-term">{term}</dt>
+                                                    <dd className="glossary-definition">{definition}</dd>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
                             </div>
 
                             <div className="progress-section">

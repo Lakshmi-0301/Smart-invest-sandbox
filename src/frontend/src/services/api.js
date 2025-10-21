@@ -77,7 +77,6 @@ export const tutorialAPI = {
             return localTutorials.find(tutorial => tutorial.id === id) || localTutorials[0];
         }
     },
-/// Submit quiz - FIXED VERSION
  submitQuiz: async (tutorialId, answers, username) => {
      try {
          console.log('🔄 Submitting quiz...');
@@ -88,7 +87,7 @@ export const tutorialAPI = {
          const requestData = {
              tutorialId: tutorialId,
              username: username,
-             answers: JSON.stringify(answers) // Convert object to JSON string
+             answers: JSON.stringify(answers)
          };
 
          console.log('Request data:', requestData);
@@ -103,12 +102,11 @@ export const tutorialAPI = {
              }
          );
 
-         console.log('✅ Quiz submitted successfully:', response.data);
+         console.log('Quiz submitted successfully:', response.data);
          return response.data.data;
      } catch (error) {
-         console.error('❌ Error submitting quiz:', error);
-         console.error('Error details:', error.response?.data);
-         console.error('Error status:', error.response?.status);
+         console.error('Error submitting quiz:', error);
+
          return {
              success: false,
              error: error.response?.data?.error || 'Failed to submit quiz',
@@ -119,23 +117,21 @@ export const tutorialAPI = {
          };
      }
  },
-// Get tutorial quiz - UPDATED to match Main.java routes
+// Get tutorial quiz
 getQuiz: async (tutorialId) => {
     try {
         console.log(`🔄 Fetching quiz for tutorial: ${tutorialId}`);
         const response = await axios.get(`${API_BASE}/tutorial/quiz`, {
             params: { tutorialId }
         });
-        console.log(`✅ Quiz data received:`, response.data);
         return response.data.data;
     } catch (error) {
-        console.error(`❌ Error fetching quiz for ${tutorialId}:`, error);
-        console.error('Error details:', error.response?.data);
+        console.error(`Error fetching quiz for ${tutorialId}:`, error);
         return getFallbackQuiz(tutorialId);
     }
 },
 
-// Get tutorial exercise - UPDATED to match Main.java routes
+// Get tutorial exercise
 getExercise: async (tutorialId) => {
     try {
         const response = await axios.get(`${API_BASE}/tutorial/exercise`, {
@@ -148,20 +144,6 @@ getExercise: async (tutorialId) => {
     }
 },
 
-// Validate exercise - UPDATED to match Main.java routes
-//validateExercise: async (tutorialId, answer, username) => {
-//    try {
-//        const response = await axios.post(`${API_BASE}/tutorial/validate`, {
-//            tutorialId: tutorialId,
-//            answer: answer,
-//            username: username
-//        });
-//        return response.data.correct;
-//    } catch (error) {
-//        console.error('Error validating exercise:', error);
-//        return false;
-//    }
-//},
 validateExercise: async (tutorialId, answer, username) => {
     if (!tutorialId || !answer || !username) {
         console.error("Missing fields for exercise validation", { tutorialId, answer, username });
@@ -173,7 +155,7 @@ validateExercise: async (tutorialId, answer, username) => {
 
         const response = await axios.post(
             `${API_BASE}/tutorial/${tutorialId}/validate`,
-            { answer, username }, // ✅ removed tutorialId from body
+            { answer, username },
             { headers: { "Content-Type": "application/json" } }
         );
 
@@ -185,36 +167,6 @@ validateExercise: async (tutorialId, answer, username) => {
     }
 },
 
-
-    // Get tutorial quiz
-
-    // Get tutorial exercise
-//    getExercise: async (tutorialId) => {
-//        try {
-//            const response = await axios.get(`${API_BASE}/tutorials/${tutorialId}/exercise`);
-//            return response.data.data;
-//        } catch (error) {
-//            console.error(`Error fetching exercise for ${tutorialId}:`, error);
-//            return null;
-//        }
-//    },
-//
-//    // Validate exercise
-//    validateExercise: async (tutorialId, answer, username) => {
-//        try {
-//            const response = await axios.post(`${API_BASE}/tutorials/${tutorialId}/validate`, {
-//                answer: answer,
-//                username: username
-//            });
-//            return response.data.correct;
-//        } catch (error) {
-//            console.error('Error validating exercise:', error);
-//            return false;
-//        }
-//    },
-//
-
-
     // Get user progress
     getUserProgress: async (username) => {
         try {
@@ -224,7 +176,6 @@ validateExercise: async (tutorialId, answer, username) => {
           return response.data;
         } catch (error) {
             console.error('Error fetching user progress:', error);
-            // Return fallback structure that matches what frontend expects
             return {
                 data: {},
                 statistics: {
@@ -260,10 +211,6 @@ validateExercise: async (tutorialId, answer, username) => {
     },
     markTutorialComplete: async (username, tutorialId) => {
         try {
-            console.log('🔍 Marking tutorial complete - Frontend Debug:');
-            console.log('Username:', username);
-            console.log('Tutorial ID:', tutorialId);
-            console.log('API Base URL:', API_BASE);
 
             const requestBody = {
                 username: username,
@@ -283,15 +230,14 @@ validateExercise: async (tutorialId, answer, username) => {
                 }
             );
 
-        console.log('✅ Mark complete response:', response.data);
+        console.log('Mark complete response:', response.data);
             return response.data;
         } catch (error) {
-            console.error('❌ Error marking tutorial complete:', error);
+            console.error('Error marking tutorial complete:', error);
             console.error('Error response:', error.response?.data);
             console.error('Error status:', error.response?.status);
             console.error('Error headers:', error.response?.headers);
 
-            // Return a consistent structure even on error
             return {
                 success: false,
                 error: error.response?.data?.error || error.message || 'Failed to mark tutorial complete'
@@ -299,10 +245,9 @@ validateExercise: async (tutorialId, answer, username) => {
         }
     },
 
-    // Update time spent (fallback - endpoint doesn't exist yet)
+
     updateTimeSpent: async (username, tutorialId, minutes) => {
         try {
-            // This endpoint doesn't exist in current backend, so we'll just return success
             console.log(`Time spent updated: User ${username}, Tutorial ${tutorialId}, ${minutes} minutes`);
             return { success: true };
         } catch (error) {

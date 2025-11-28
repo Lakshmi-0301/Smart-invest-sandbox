@@ -69,36 +69,44 @@ const TutorialPage = ({ onBackToHome, user }) => {
         }
     };
 
+
     const loadUserProgress = async () => {
-        try {
-            const progress = await tutorialAPI.getUserProgress(user.username);
-            const safeProgress = {
-                data: progress.data || {},
-                statistics: {
-                    completedTutorials: progress.statistics?.completedTutorials || 0,
-                    currentLevel: progress.statistics?.currentLevel || 'Beginner',
-                    badges: progress.statistics?.badges || [],
-                    certifications: progress.statistics?.certifications || [],
-                    totalTimeSpent: progress.statistics?.totalTimeSpent || 0,
-                    averageScore: progress.statistics?.averageScore || 0
-                }
-            };
-            setUserProgress(safeProgress);
-        } catch (error) {
-            console.error('Failed to load user progress:', error);
-            setUserProgress({
-                data: {},
-                statistics: {
-                    completedTutorials: 0,
-                    currentLevel: 'Beginner',
-                    badges: [],
-                    certifications: [],
-                    totalTimeSpent: 0,
-                    averageScore: 0
-                }
-            });
-        }
+      try {
+        const progress = await tutorialAPI.getUserProgress(user.username);
+
+        const safeProgress = {
+          data: progress.data || {},
+          statistics: {
+            completedTutorials: progress.statistics?.completedTutorials || 0,
+            currentLevel: progress.statistics?.currentLevel || 'Beginner',
+            badges: Array.isArray(progress.statistics?.badges)
+              ? progress.statistics.badges
+              : [],
+            certifications: Array.isArray(progress.statistics?.certifications)
+              ? progress.statistics.certifications
+              : [],
+            totalTimeSpent: progress.statistics?.totalTimeSpent || 0,
+            averageScore: progress.statistics?.averageScore || 0
+          }
+        };
+
+        setUserProgress(safeProgress);
+      } catch (error) {
+        console.error('Failed to load user progress:', error);
+        setUserProgress({
+          data: {},
+          statistics: {
+            completedTutorials: 0,
+            currentLevel: 'Beginner',
+            badges: [],
+            certifications: [],
+            totalTimeSpent: 0,
+            averageScore: 0
+          }
+        });
+      }
     };
+
 
     const loadTutorialProgress = async () => {
         try {

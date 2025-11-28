@@ -123,7 +123,7 @@ public class TutorialService {
         boolean passed = score >= quiz.getPassingScore();
         int intScore = (int) score;
 
-        // ✅ SAVE QUIZ RESULT TO DATABASE
+        // SAVE QUIZ RESULT TO DATABASE
         boolean saveSuccess = dbHandler.updateQuizResult(username, tutorialId, intScore, passed);
 
         System.out.println("=== QUIZ RESULT SAVED TO DATABASE ===");
@@ -179,8 +179,7 @@ public class TutorialService {
         return tutorial != null ? tutorial.getExercise() : null;
     }
 
-    // User progress tracking - FIXED VERSION
-    // FIXME
+    // User progress tracking
     public boolean updateUserProgress(String username, String tutorialId, boolean completed) {
         System.out.println("=== UPDATE USER PROGRESS DEBUG ===");
         System.out.println("Username: " + username);
@@ -243,13 +242,13 @@ public class TutorialService {
         return progressMap;
     }
 
-    // NEW METHOD: Get quiz score for a specific user and tutorial
+    //Get quiz score for a specific user and tutorial
     public Integer getQuizScore(String username, String tutorialId) {
         backend.models.UserProgress progress = dbHandler.getUserProgress(username, tutorialId);
         return progress != null ? progress.getQuizScore() : null;
     }
 
-    // NEW METHOD: Get detailed tutorial progress including quiz scores
+    //Get detailed tutorial progress including quiz scores
     public Map<String, Object> getTutorialProgress(String username, String tutorialId) {
         backend.models.UserProgress progress = dbHandler.getUserProgress(username, tutorialId);
         Map<String, Object> progressInfo = new HashMap<>();
@@ -462,6 +461,7 @@ public class TutorialService {
         chartExercise.setType("ANALYSIS");
         chartReading.setExercise(chartExercise);
         chartReading.setHasExercise(true);
+
 
 
         tutorials.put(chartReading.getId(), chartReading);

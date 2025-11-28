@@ -1,151 +1,409 @@
+import backend.controllers.StockController;
+import backend.services.AlphaVantageService;
 import backend.services.AuthService;
+import backend.services.PortfolioService;
 import backend.services.TutorialService;
+import backend.database.DatabaseHandler;
 import backend.models.User;
+import backend.models.Portfolio;
+import backend.models.Transaction;
 import backend.models.TutorialSection;
 import backend.models.Quiz;
 import backend.models.Question;
 import backend.models.Exercise;
 import backend.models.CaseStudy;
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
-import java.util.List;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 public class Main {
-    private static final AuthService authService = new AuthService();
-    private static final TutorialService tutorialService = new TutorialService();
+    private static StockController stockController;
+    private static AuthService authService;
+    private static PortfolioService portfolioService;
+    private static TutorialService tutorialService;
 
-    public static void main(String[] args) throws IOException {
-        int port = 8080;
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+    public static void main(String[] args) {
+        try {
+            // Initialize services
+            DatabaseHandler dbHandler = new DatabaseHandler();
+            authService = new AuthService(dbHandler);
+            AlphaVantageService alphaVantageService = new AlphaVantageService();
+            stockController = new StockController(alphaVantageService);
+            portfolioService = new PortfolioService(dbHandler);
+            tutorialService = new TutorialService();
 
-        server.createContext("/api/register", new RegisterHandler());
-        server.createContext("/api/login", new LoginHandler());
-        server.createContext("/api/user", new UserHandler());
-        server.createContext("/api/tutorials", new TutorialsHandler());
-        server.createContext("/api/tutorial", new TutorialHandler());
-        server.createContext("/api/tutorials/search", new TutorialSearchHandler());
-        server.createContext("/api/tutorials/by-level", new TutorialsByLevelHandler());
-        server.createContext("/api/tutorials/by-category", new TutorialsByCategoryHandler());
-        server.createContext("/api/tutorials/progress", new TutorialProgressHandler());
-        server.createContext("/api/tutorial/quiz", new TutorialQuizHandler());
-        server.createContext("/api/tutorial/exercise", new TutorialExerciseHandler());
-        server.createContext("/api/health", new HealthHandler());
-        server.createContext("/api/tutorials/progress/complete", new TutorialProgressCompleteHandler());
-        server.setExecutor(null);
-        server.start();
-        System.out.println("Server started on port " + port);
+            // Create HTTP server
+            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+
+            // ========== TRADING SYSTEM ROUTES ==========
+            server.createContext("/api/stocks", new StockHandler());
+            server.createContext("/api/auth", new AuthHandler());
+            server.createContext("/api/portfolio", new PortfolioHandler());
+            server.createContext("/api/transactions", new TransactionsHandler());
+            server.createContext("/api/trade", new TradeHandler());
+
+            // ========== TUTORIAL SYSTEM ROUTES ==========
+            server.createContext("/api/tutorials", new TutorialsHandler());
+            server.createContext("/api/tutorial", new TutorialHandler());
+            server.createContext("/api/tutorials/search", new TutorialSearchHandler());
+            server.createContext("/api/tutorials/by-level", new TutorialsByLevelHandler());
+            server.createContext("/api/tutorials/by-category", new TutorialsByCategoryHandler());
+            server.createContext("/api/tutorials/progress", new TutorialProgressHandler());
+            server.createContext("/api/tutorial/quiz", new TutorialQuizHandler());
+            server.createContext("/api/tutorial/exercise", new TutorialExerciseHandler());
+            server.createContext("/api/tutorials/progress/complete", new TutorialProgressCompleteHandler());
+            server.createContext("/api/health", new HealthHandler());
+
+            server.setExecutor(null);
+            server.start();
+
+            System.out.println("🚀 Smart-Invest Server started on port 8080");
+            System.out.println("=== TRADING SYSTEM ENDPOINTS ===");
+            System.out.println("GET  /api/stocks/{symbol}");
+            System.out.println("POST /api/auth/login");
+            System.out.println("POST /api/auth/register");
+            System.out.println("GET  /api/portfolio?username={username}");
+            System.out.println("GET  /api/transactions?username={username}");
+            System.out.println("POST /api/trade/buy");
+            System.out.println("POST /api/trade/sell");
+
+            System.out.println("=== TUTORIAL SYSTEM ENDPOINTS ===");
+            System.out.println("GET  /api/tutorials");
+            System.out.println("GET  /api/tutorial/{id}");
+            System.out.println("GET  /api/tutorials/search?q={query}");
+            System.out.println("GET  /api/tutorials/by-level?level={level}");
+            System.out.println("GET  /api/tutorials/by-category?category={category}");
+            System.out.println("GET  /api/tutorials/progress?username={username}");
+            System.out.println("POST /api/tutorials/progress/complete");
+            System.out.println("GET  /api/tutorial/quiz?tutorialId={id}");
+            System.out.println("POST /api/tutorial/quiz");
+            System.out.println("GET  /api/tutorial/exercise?tutorialId={id}");
+            System.out.println("POST /api/tutorial/{id}/validate");
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to start server: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    static class RegisterHandler implements HttpHandler {
+    // ===================== STOCK HANDLER =====================
+    static class StockHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             setCorsHeaders(exchange);
-            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, -1);
                 return;
             }
-            if (!"POST".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(405, -1);
+
+            if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\": \"Method not allowed\"}");
                 return;
             }
+
             try {
-                String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-                String username = extractValue(requestBody, "username");
-                String password = extractValue(requestBody, "password");
-                String email = extractValue(requestBody, "email");
+                String path = exchange.getRequestURI().getPath();
+                if (path.startsWith("/api/stocks/")) {
+                    String symbol = path.substring("/api/stocks/".length());
+                    if (symbol.isEmpty()) {
+                        sendResponse(exchange, 400, "{\"error\": \"Stock symbol is required\"}");
+                        return;
+                    }
 
-                if (username == null || password == null || email == null) {
-                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Missing required fields\"}");
-                    return;
-                }
-
-                User newUser = authService.registerUser(username, password, email);
-                if (newUser != null) {
-                    String userJson = String.format("{\"username\":\"%s\",\"email\":\"%s\",\"balance\":%.2f}",
-                            newUser.getUsername(), newUser.getEmail(), newUser.getBalance());
-                    sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Registration successful\",\"data\":" + userJson + "}");
+                    Map<String, Object> stockData = stockController.getStockQuote(symbol);
+                    String response = "{\"success\":true,\"data\":" + convertObjectToJson(stockData) + "}";
+                    sendResponse(exchange, 200, response);
                 } else {
-                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Registration failed\"}");
+                    sendResponse(exchange, 404, "{\"error\": \"Endpoint not found\"}");
                 }
             } catch (Exception e) {
-                sendJsonResponse(exchange, 500, "{\"success\":false,\"message\":\"Internal server error\"}");
+                System.err.println("Error in StockHandler: " + e.getMessage());
+                sendResponse(exchange, 500, "{\"error\": \"Internal server error: " + e.getMessage() + "\"}");
             }
         }
     }
 
-    static class LoginHandler implements HttpHandler {
+    // ===================== AUTH HANDLER =====================
+    static class AuthHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             setCorsHeaders(exchange);
-            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, -1);
                 return;
             }
-            if (!"POST".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(405, -1);
+
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\": \"Method not allowed\"}");
                 return;
             }
+
             try {
                 String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                String path = exchange.getRequestURI().getPath();
+
+                if (path.equals("/api/auth/login")) {
+                    handleLogin(exchange, requestBody);
+                } else if (path.equals("/api/auth/register")) {
+                    handleRegister(exchange, requestBody);
+                } else {
+                    sendResponse(exchange, 404, "{\"error\": \"Endpoint not found\"}");
+                }
+            } catch (Exception e) {
+                System.err.println("Error in AuthHandler: " + e.getMessage());
+                sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            }
+        }
+
+        private void handleLogin(HttpExchange exchange, String requestBody) throws IOException {
+            try {
                 String username = extractValue(requestBody, "username");
                 String password = extractValue(requestBody, "password");
 
                 if (username == null || password == null) {
-                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Missing username or password\"}");
+                    sendResponse(exchange, 400, "{\"success\":false,\"error\":\"Username and password are required\"}");
                     return;
                 }
 
                 User user = authService.loginUser(username, password);
                 if (user != null) {
-                    String userJson = String.format("{\"username\":\"%s\",\"email\":\"%s\",\"balance\":%.2f}",
-                            user.getUsername(), user.getEmail(), user.getBalance());
-                    sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Login successful\",\"data\":" + userJson + "}");
+                    String response = String.format(
+                            "{\"success\":true,\"message\":\"Login successful\",\"data\":{\"username\":\"%s\",\"email\":\"%s\",\"balance\":%.2f}}",
+                            escapeJson(user.getUsername()),
+                            escapeJson(user.getEmail()),
+                            user.getBalance()
+                    );
+                    sendResponse(exchange, 200, response);
                 } else {
-                    sendJsonResponse(exchange, 401, "{\"success\":false,\"message\":\"Invalid credentials\"}");
+                    sendResponse(exchange, 401, "{\"success\":false,\"error\":\"Invalid credentials\"}");
                 }
             } catch (Exception e) {
-                sendJsonResponse(exchange, 500, "{\"success\":false,\"message\":\"Internal server error\"}");
+                throw new IOException("Login processing failed", e);
+            }
+        }
+
+        private void handleRegister(HttpExchange exchange, String requestBody) throws IOException {
+            try {
+                String username = extractValue(requestBody, "username");
+                String email = extractValue(requestBody, "email");
+                String password = extractValue(requestBody, "password");
+
+                if (username == null || email == null || password == null) {
+                    sendResponse(exchange, 400, "{\"success\":false,\"error\":\"Username, email and password are required\"}");
+                    return;
+                }
+
+                User newUser = authService.registerUser(username, password, email);
+                if (newUser != null) {
+                    String response = String.format(
+                            "{\"success\":true,\"message\":\"Registration successful\",\"data\":{\"username\":\"%s\",\"email\":\"%s\",\"balance\":%.2f}}",
+                            escapeJson(newUser.getUsername()),
+                            escapeJson(newUser.getEmail()),
+                            newUser.getBalance()
+                    );
+                    sendResponse(exchange, 200, response);
+                } else {
+                    sendResponse(exchange, 400, "{\"success\":false,\"error\":\"Username already exists\"}");
+                }
+            } catch (Exception e) {
+                throw new IOException("Registration processing failed", e);
             }
         }
     }
 
-    static class UserHandler implements HttpHandler {
+    // ===================== PORTFOLIO HANDLER =====================
+    static class PortfolioHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             setCorsHeaders(exchange);
-            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, -1);
                 return;
             }
-            if (!"GET".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(405, -1);
+
+            if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\": \"Method not allowed\"}");
                 return;
             }
+
             try {
                 String query = exchange.getRequestURI().getQuery();
-                String username = getParameterFromQuery(query, "username");
+                String username = getParamValue(query, "username");
+
                 if (username == null) {
-                    sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Username parameter required\"}");
+                    sendResponse(exchange, 400, "{\"error\": \"Username parameter required\"}");
                     return;
                 }
-                User user = authService.getUser(username);
-                if (user != null) {
-                    String userJson = String.format("{\"username\":\"%s\",\"email\":\"%s\",\"balance\":%.2f}",
-                            user.getUsername(), user.getEmail(), user.getBalance());
-                    sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"User found\",\"data\":" + userJson + "}");
-                } else {
-                    sendJsonResponse(exchange, 404, "{\"success\":false,\"message\":\"User not found\"}");
-                }
+
+                List<Portfolio> portfolio = portfolioService.getPortfolio(username);
+                String portfolioJson = convertPortfolioToJson(portfolio);
+                double totalValue = portfolioService.getPortfolioValue(username);
+                double totalGainLoss = portfolioService.getTotalGainLoss(username);
+
+                String response = String.format(
+                        "{\"success\":true,\"portfolio\":%s,\"totalValue\":%.2f,\"totalGainLoss\":%.2f}",
+                        portfolioJson, totalValue, totalGainLoss
+                );
+                sendResponse(exchange, 200, response);
+
             } catch (Exception e) {
-                sendJsonResponse(exchange, 500, "{\"success\":false,\"message\":\"Internal server error\"}");
+                System.err.println("Error in PortfolioHandler: " + e.getMessage());
+                sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
             }
         }
     }
+
+    // ===================== TRANSACTIONS HANDLER =====================
+    static class TransactionsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            setCorsHeaders(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+
+            if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\": \"Method not allowed\"}");
+                return;
+            }
+
+            try {
+                String query = exchange.getRequestURI().getQuery();
+                String username = getParamValue(query, "username");
+
+                if (username == null) {
+                    sendResponse(exchange, 400, "{\"error\": \"Username parameter required\"}");
+                    return;
+                }
+
+                List<Transaction> transactions = portfolioService.getTransactions(username);
+                String transactionsJson = convertTransactionsToJson(transactions);
+
+                String response = "{\"success\":true,\"transactions\":" + transactionsJson + "}";
+                sendResponse(exchange, 200, response);
+
+            } catch (Exception e) {
+                System.err.println("Error in TransactionsHandler: " + e.getMessage());
+                sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            }
+        }
+    }
+
+    // ===================== TRADE HANDLER =====================
+    static class TradeHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            setCorsHeaders(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\": \"Method not allowed\"}");
+                return;
+            }
+
+            try {
+                String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                String path = exchange.getRequestURI().getPath();
+
+                if (path.equals("/api/trade/buy")) {
+                    handleBuy(exchange, requestBody);
+                } else if (path.equals("/api/trade/sell")) {
+                    handleSell(exchange, requestBody);
+                } else {
+                    sendResponse(exchange, 404, "{\"error\": \"Endpoint not found\"}");
+                }
+            } catch (Exception e) {
+                System.err.println("Error in TradeHandler: " + e.getMessage());
+                sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            }
+        }
+
+        private void handleBuy(HttpExchange exchange, String requestBody) throws IOException {
+            String username = extractValue(requestBody, "username");
+            String symbol = extractValue(requestBody, "symbol");
+            String stockName = extractValue(requestBody, "stockName");
+            String quantityStr = extractValue(requestBody, "quantity");
+            String orderType = extractValue(requestBody, "orderType");
+            String duration = extractValue(requestBody, "duration");
+
+            if (username == null || symbol == null || stockName == null || quantityStr == null) {
+                sendResponse(exchange, 400, "{\"success\":false,\"error\":\"Missing required fields\"}");
+                return;
+            }
+
+            try {
+                int quantity = Integer.parseInt(quantityStr);
+                Map<String, Object> result = portfolioService.buyStock(username, symbol, stockName, quantity, orderType, duration);
+
+                if (Boolean.TRUE.equals(result.get("success"))) {
+                    User user = authService.getUser(username);
+                    String response = String.format(
+                            "{\"success\":true,\"message\":\"%s\",\"user\":{\"username\":\"%s\",\"email\":\"%s\",\"balance\":%.2f}}",
+                            result.get("message"),
+                            escapeJson(user.getUsername()),
+                            escapeJson(user.getEmail()),
+                            user.getBalance()
+                    );
+                    sendResponse(exchange, 200, response);
+                } else {
+                    sendResponse(exchange, 400, "{\"success\":false,\"error\":\"" + result.get("message") + "\"}");
+                }
+            } catch (NumberFormatException e) {
+                sendResponse(exchange, 400, "{\"success\":false,\"error\":\"Invalid quantity\"}");
+            }
+        }
+
+        private void handleSell(HttpExchange exchange, String requestBody) throws IOException {
+            String username = extractValue(requestBody, "username");
+            String symbol = extractValue(requestBody, "symbol");
+            String stockName = extractValue(requestBody, "stockName");
+            String quantityStr = extractValue(requestBody, "quantity");
+            String orderType = extractValue(requestBody, "orderType");
+            String duration = extractValue(requestBody, "duration");
+
+            if (username == null || symbol == null || stockName == null || quantityStr == null) {
+                sendResponse(exchange, 400, "{\"success\":false,\"error\":\"Missing required fields\"}");
+                return;
+            }
+
+            try {
+                int quantity = Integer.parseInt(quantityStr);
+                Map<String, Object> result = portfolioService.sellStock(username, symbol, stockName, quantity, orderType, duration);
+
+                if (Boolean.TRUE.equals(result.get("success"))) {
+                    User user = authService.getUser(username);
+                    String response = String.format(
+                            "{\"success\":true,\"message\":\"%s\",\"user\":{\"username\":\"%s\",\"email\":\"%s\",\"balance\":%.2f}}",
+                            result.get("message"),
+                            escapeJson(user.getUsername()),
+                            escapeJson(user.getEmail()),
+                            user.getBalance()
+                    );
+                    sendResponse(exchange, 200, response);
+                } else {
+                    sendResponse(exchange, 400, "{\"success\":false,\"error\":\"" + result.get("message") + "\"}");
+                }
+            } catch (NumberFormatException e) {
+                sendResponse(exchange, 400, "{\"success\":false,\"error\":\"Invalid quantity\"}");
+            }
+        }
+    }
+
+    // ===================== TUTORIAL HANDLERS =====================
 
     static class TutorialsHandler implements HttpHandler {
         @Override
@@ -263,15 +521,12 @@ public class Main {
             try {
                 String query = exchange.getRequestURI().getQuery();
                 String searchTerm = getParameterFromQuery(query, "q");
-                String category = getParameterFromQuery(query, "category");
 
                 List<TutorialSection> tutorials;
-                if (category != null) {
-                    tutorials = tutorialService.getTutorialsByCategory(category);
-                } else if (searchTerm != null) {
+                if (searchTerm != null) {
                     tutorials = tutorialService.searchTutorials(searchTerm);
                 } else {
-                    sendJsonResponse(exchange, 400, "{\"success\":false,\"error\":\"Search term or category parameter required\"}");
+                    sendJsonResponse(exchange, 400, "{\"success\":false,\"error\":\"Search term parameter required\"}");
                     return;
                 }
 
@@ -396,12 +651,11 @@ public class Main {
             }
 
             Map<String, Boolean> progress = tutorialService.getUserProgress(username);
-            Map<String, Object> stats = tutorialService.getUserStatistics(username); // Add this line
+            Map<String, Object> stats = tutorialService.getUserStatistics(username);
 
             String progressJson = convertProgressToJson(progress);
-            String statsJson = convertObjectToJson(stats); // Convert stats to JSON
+            String statsJson = convertObjectToJson(stats);
 
-            // Return both progress and statistics
             String response = String.format("{\"success\":true,\"data\":%s,\"statistics\":%s}",
                     progressJson, statsJson);
             sendJsonResponse(exchange, 200, response);
@@ -425,6 +679,7 @@ public class Main {
             return json.toString();
         }
     }
+
     static class TutorialProgressCompleteHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -459,6 +714,7 @@ public class Main {
             }
         }
     }
+
     static class TutorialQuizHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -499,14 +755,12 @@ public class Main {
             }
         }
 
-
         private void handleSubmitQuiz(HttpExchange exchange) throws IOException {
             try {
                 String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                 System.out.println("=== QUIZ SUBMISSION DEBUG ===");
                 System.out.println("Raw request body: " + requestBody);
 
-                // Parse JSON properly
                 String tutorialId = extractJsonValue(requestBody, "tutorialId");
                 String username = extractJsonValue(requestBody, "username");
                 String answersJson = extractJsonValue(requestBody, "answers");
@@ -523,7 +777,6 @@ public class Main {
 
                 Map<String, Object> result = tutorialService.submitQuiz(tutorialId, username, answersJson);
                 if (result != null) {
-                    // Use the existing convertObjectToJson method
                     String resultJson = convertObjectToJson(result);
                     System.out.println("Quiz submission successful, sending response: " + resultJson);
                     sendJsonResponse(exchange, 200, "{\"success\":true,\"data\":" + resultJson + "}");
@@ -534,79 +787,6 @@ public class Main {
                 System.err.println("Error in handleSubmitQuiz: " + e.getMessage());
                 e.printStackTrace();
                 sendJsonResponse(exchange, 500, "{\"success\":false,\"error\":\"Failed to submit quiz: " + e.getMessage() + "\"}");
-            }
-        }
-        private static String extractJsonValue(String json, String key) {
-            try {
-                System.out.println("=== EXTRACTING JSON VALUE ===");
-                System.out.println("Looking for key: " + key);
-
-                String searchKey = "\"" + key + "\":";
-                int keyIndex = json.indexOf(searchKey);
-                if (keyIndex == -1) {
-                    System.out.println("Key not found: " + key);
-                    return null;
-                }
-
-                int valueStart = keyIndex + searchKey.length();
-
-                // Skip whitespace
-                while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
-                    valueStart++;
-                }
-
-                if (valueStart >= json.length()) {
-                    System.out.println("No value after key");
-                    return null;
-                }
-
-                char firstChar = json.charAt(valueStart);
-                System.out.println("First character of value: '" + firstChar + "'");
-
-                if (firstChar == '"') {
-                    valueStart++; // Skip opening quote
-                    StringBuilder valueBuilder = new StringBuilder();
-                    int currentPos = valueStart;
-                    boolean escaped = false;
-
-                    while (currentPos < json.length()) {
-                        char c = json.charAt(currentPos);
-
-                        if (escaped) {
-                            valueBuilder.append(c);
-                            escaped = false;
-                        } else if (c == '\\') {
-                            escaped = true;
-                        } else if (c == '"') {
-                            // Found closing quote
-                            String value = valueBuilder.toString();
-                            System.out.println("Extracted string value: " + value);
-                            return value;
-                        } else {
-                            valueBuilder.append(c);
-                        }
-                        currentPos++;
-                    }
-                    System.out.println("No closing quote found");
-                    return null;
-                } else {
-                    // For other types, use simple extraction
-                    int valueEnd = valueStart;
-                    while (valueEnd < json.length()) {
-                        char c = json.charAt(valueEnd);
-                        if (c == ',' || c == '}' || Character.isWhitespace(c)) {
-                            break;
-                        }
-                        valueEnd++;
-                    }
-                    String value = json.substring(valueStart, valueEnd);
-                    System.out.println("Extracted value: " + value);
-                    return value;
-                }
-            } catch (Exception e) {
-                System.err.println("Error extracting JSON value for '" + key + "': " + e.getMessage());
-                e.printStackTrace();
-                return null;
             }
         }
     }
@@ -678,23 +858,45 @@ public class Main {
                 exchange.sendResponseHeaders(405, -1);
                 return;
             }
-            sendJsonResponse(exchange, 200, "{\"status\":\"OK\",\"service\":\"Tutorial API\"}");
+            sendJsonResponse(exchange, 200, "{\"status\":\"OK\",\"service\":\"Smart-Invest API\"}");
         }
     }
+
+    // ===================== UTILITY METHODS =====================
 
     private static void setCorsHeaders(HttpExchange exchange) {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
         exchange.getResponseHeaders().set("Access-Control-Max-Age", "3600");
     }
 
-    private static void sendJsonResponse(HttpExchange exchange, int statusCode, String jsonResponse) throws IOException {
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
-        exchange.sendResponseHeaders(statusCode, jsonResponse.getBytes().length);
+    private static void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.sendResponseHeaders(statusCode, response.getBytes(StandardCharsets.UTF_8).length);
         try (OutputStream os = exchange.getResponseBody()) {
-            os.write(jsonResponse.getBytes());
+            os.write(response.getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    private static void sendJsonResponse(HttpExchange exchange, int statusCode, String jsonResponse) throws IOException {
+        sendResponse(exchange, statusCode, jsonResponse);
+    }
+
+    private static String getParamValue(String query, String paramName) {
+        if (query == null) return null;
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            int equalsIndex = pair.indexOf("=");
+            if (equalsIndex > 0) {
+                String key = pair.substring(0, equalsIndex);
+                String value = pair.substring(equalsIndex + 1);
+                if (key.equals(paramName)) {
+                    return value;
+                }
+            }
+        }
+        return null;
     }
 
     private static String getParameterFromQuery(String query, String paramName) {
@@ -721,6 +923,139 @@ public class Main {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private static String extractJsonValue(String json, String key) {
+        try {
+            String searchKey = "\"" + key + "\":";
+            int keyIndex = json.indexOf(searchKey);
+            if (keyIndex == -1) {
+                return null;
+            }
+
+            int valueStart = keyIndex + searchKey.length();
+            while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
+                valueStart++;
+            }
+
+            if (valueStart >= json.length()) {
+                return null;
+            }
+
+            char firstChar = json.charAt(valueStart);
+            if (firstChar == '"') {
+                valueStart++;
+                StringBuilder valueBuilder = new StringBuilder();
+                int currentPos = valueStart;
+                boolean escaped = false;
+
+                while (currentPos < json.length()) {
+                    char c = json.charAt(currentPos);
+
+                    if (escaped) {
+                        valueBuilder.append(c);
+                        escaped = false;
+                    } else if (c == '\\') {
+                        escaped = true;
+                    } else if (c == '"') {
+                        return valueBuilder.toString();
+                    } else {
+                        valueBuilder.append(c);
+                    }
+                    currentPos++;
+                }
+                return null;
+            } else {
+                int valueEnd = valueStart;
+                while (valueEnd < json.length()) {
+                    char c = json.charAt(valueEnd);
+                    if (c == ',' || c == '}' || Character.isWhitespace(c)) {
+                        break;
+                    }
+                    valueEnd++;
+                }
+                return json.substring(valueStart, valueEnd);
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // JSON Conversion Methods
+    private static String convertPortfolioToJson(List<Portfolio> portfolio) {
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < portfolio.size(); i++) {
+            Portfolio item = portfolio.get(i);
+            json.append(String.format(
+                    "{\"id\":%d,\"symbol\":\"%s\",\"stockName\":\"%s\",\"quantity\":%d,\"purchasePrice\":%.2f,\"currentPrice\":%.2f,\"totalValue\":%.2f,\"totalGainLoss\":%.2f,\"gainLossPercentage\":%.2f}",
+                    item.getId(),
+                    escapeJson(item.getSymbol()),
+                    escapeJson(item.getStockName()),
+                    item.getQuantity(),
+                    item.getPurchasePrice(),
+                    item.getCurrentPrice(),
+                    item.getTotalValue(),
+                    item.getTotalGainLoss(),
+                    item.getGainLossPercentage()
+            ));
+            if (i < portfolio.size() - 1) {
+                json.append(",");
+            }
+        }
+        json.append("]");
+        return json.toString();
+    }
+
+    private static String convertTransactionsToJson(List<Transaction> transactions) {
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < transactions.size(); i++) {
+            Transaction transaction = transactions.get(i);
+            json.append(String.format(
+                    "{\"id\":%d,\"type\":\"%s\",\"symbol\":\"%s\",\"stockName\":\"%s\",\"quantity\":%d,\"price\":%.2f,\"totalAmount\":%.2f,\"orderType\":\"%s\",\"duration\":\"%s\",\"transactionDate\":\"%s\"}",
+                    transaction.getId(),
+                    escapeJson(transaction.getType()),
+                    escapeJson(transaction.getSymbol()),
+                    escapeJson(transaction.getStockName()),
+                    transaction.getQuantity(),
+                    transaction.getPrice(),
+                    transaction.getTotalAmount(),
+                    escapeJson(transaction.getOrderType()),
+                    escapeJson(transaction.getDuration()),
+                    escapeJson(transaction.getTransactionDate().toString())
+            ));
+            if (i < transactions.size() - 1) {
+                json.append(",");
+            }
+        }
+        json.append("]");
+        return json.toString();
+    }
+
+    private static String convertObjectToJson(Object obj) {
+        if (obj == null) return "null";
+        if (obj instanceof Map) {
+            return convertMapToJson((Map<?, ?>) obj);
+        } else if (obj instanceof String) {
+            return "\"" + escapeJson(obj.toString()) + "\"";
+        } else if (obj instanceof Number || obj instanceof Boolean) {
+            return obj.toString();
+        } else {
+            return "\"" + escapeJson(obj.toString()) + "\"";
+        }
+    }
+
+    private static String convertMapToJson(Map<?, ?> map) {
+        if (map == null || map.isEmpty()) return "{}";
+        StringBuilder json = new StringBuilder("{");
+        int i = 0;
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            json.append("\"").append(escapeJson(entry.getKey().toString())).append("\":")
+                    .append(convertObjectToJson(entry.getValue()));
+            if (i < map.size() - 1) json.append(",");
+            i++;
+        }
+        json.append("}");
+        return json.toString();
     }
 
     private static String convertTutorialsToJson(List<TutorialSection> tutorials) {
@@ -750,7 +1085,6 @@ public class Main {
                 escapeJson(tutorial.getContent()),
                 convertStringListToJson(tutorial.getInfographics()),
                 convertStringListToJson(tutorial.getKeyPoints()),
-
                 convertMapToJson(tutorial.getGlossary()),
                 convertQuizToJson(tutorial.getQuiz()),
                 convertExerciseToJson(tutorial.getExercise()),
@@ -828,106 +1162,13 @@ public class Main {
         return json.toString();
     }
 
-    private static String convertMapToJson(Map<String, String> map) {
-        if (map == null || map.isEmpty()) {
-            return "{}";
-        }
-        StringBuilder json = new StringBuilder("{");
-        int i = 0;
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            json.append("\"").append(escapeJson(entry.getKey())).append("\":\"")
-                    .append(escapeJson(entry.getValue())).append("\"");
-            if (i < map.size() - 1) {
-                json.append(",");
-            }
-            i++;
-        }
-        json.append("}");
-        return json.toString();
-    }
-
-private static String convertObjectMapToJson(Map<String, Object> map) {
-    if (map == null || map.isEmpty()) {
-        return "{}";
-    }
-
-    StringBuilder json = new StringBuilder("{");
-    int i = 0;
-    for (Map.Entry<String, Object> entry : map.entrySet()) {
-        String key = entry.getKey();
-        Object value = entry.getValue();
-
-        json.append("\"").append(escapeJson(key)).append("\":");
-
-        if (value instanceof String) {
-            json.append("\"").append(escapeJson((String) value)).append("\"");
-        } else if (value instanceof Number) {
-            json.append(value);
-        } else if (value instanceof Boolean) {
-            json.append(value);
-        } else if (value instanceof List) {
-            json.append(convertListToJson((List<?>) value));
-        } else if (value instanceof Map) {
-            json.append(convertObjectMapToJson((Map<String, Object>) value));
-        } else {
-            json.append("\"").append(escapeJson(value != null ? value.toString() : "")).append("\"");
-        }
-
-        if (i < map.size() - 1) {
-            json.append(",");
-        }
-        i++;
-    }
-    json.append("}");
-    return json.toString();
-}
-private static String convertObjectToJson(Object obj) {
-    if (obj == null) return "null";
-
-    try {
-        if (obj instanceof Map) {
-            return convertObjectMapToJson((Map<String, Object>) obj);
-        } else if (obj instanceof List) {
-            return convertListToJson((List<?>) obj);
-        } else if (obj instanceof String) {
-            return "\"" + escapeJson(obj.toString()) + "\"";
-        } else if (obj instanceof Number || obj instanceof Boolean) {
-            return obj.toString();
-        } else {
-            // For other objects, use simple toString() and escape
-            return "\"" + escapeJson(obj.toString()) + "\"";
-        }
-    } catch (Exception e) {
-        System.err.println("Error converting object to JSON: " + e.getMessage());
-        e.printStackTrace();
-        return "null";
-    }
-}
-
-    // Add this helper method for List serialization
-    private static String convertListToJson(List<?> list) {
-        if (list == null || list.isEmpty()) {
-            return "[]";
-        }
-
-        StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < list.size(); i++) {
-            Object item = list.get(i);
-            json.append(convertObjectToJson(item));
-            if (i < list.size() - 1) {
-                json.append(",");
-            }
-        }
-        json.append("]");
-        return json.toString();
-    }
-
     private static String escapeJson(String str) {
         if (str == null) return "";
         return str.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
-                .replace("\t", "\\t");
+                .replace("\t", "\\t")
+                .replace("/", "\\/");
     }
 }

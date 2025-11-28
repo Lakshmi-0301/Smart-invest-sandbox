@@ -9,7 +9,7 @@ public class Exercise {
     private String hint;
     private String type; // CALCULATION, ANALYSIS, TRADING_SCENARIO
     private Map<String, Object> simulationData;
-
+    private String imageUrl;
     public Exercise() {
         this.simulationData = new HashMap<>();
     }
@@ -41,7 +41,13 @@ public class Exercise {
         if (this.simulationData == null) this.simulationData = new HashMap<>();
         this.simulationData.put(key, value);
     }
+    public String getImageUrl() {
+        return imageUrl;
+    }
 
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
     public boolean validateAnswer(String userAnswer) {
         if (answer == null || userAnswer == null) return false;
         return answer.trim().equalsIgnoreCase(userAnswer.trim());

@@ -167,9 +167,9 @@ const TutorialPage = ({ onBackToHome, user }) => {
 
                 // Show completion message for high scores
                 if (results.score >= 90) {
-                    alert(`🎉 Excellent! You scored ${results.score}% and completed the tutorial!`);
+                    alert(` Excellent! You scored ${results.score}% and completed the tutorial!`);
                 } else if (results.passed) {
-                    alert(`✅ Great job! You passed with ${results.score}% and completed the tutorial!`);
+                    alert(` Great job! You passed with ${results.score}% and completed the tutorial!`);
                 }
             }
         } catch (error) {
@@ -213,7 +213,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
 
     const markAsComplete = async () => {
         try {
-            console.log('🔍 markAsComplete called:');
+            console.log(' markAsComplete called:');
             console.log('User:', user);
             console.log('Username:', user?.username);
             console.log('Active Section:', activeSection);
@@ -279,7 +279,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
         // Use whichever is available
         const completed = completedFromStatistics > 0 ? completedFromStatistics : completedFromData;
 
-        console.log('📊 Progress Calculation:', {
+        console.log(' Progress Calculation:', {
             totalTutorials: total,
             completedFromStatistics: completedFromStatistics,
             completedFromData: completedFromData,
@@ -320,7 +320,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
             {showCompletion && (
                 <div className="completion-celebration">
                     <div className="celebration-content">
-                        <h3>🎉 Tutorial Completed! 🎉</h3>
+                        <h3> Tutorial Completed! 🎉</h3>
                         <p>Great job completing "{currentTutorial.title}"!</p>
                         {tutorialProgress.quizScore > 0 && (
                             <p>Quiz Score: <strong>{tutorialProgress.quizScore}%</strong></p>
@@ -469,11 +469,11 @@ const TutorialPage = ({ onBackToHome, user }) => {
                                     <div className="current-progress">
                                         <span style={{color: "#666666"}}>Your Progress: </span>
                                         {tutorialProgress.completed || tutorialProgress.quizPassed ? (
-                                            <span style={{color: '#28a745', fontWeight: 'bold'}}>✅ Completed</span>
+                                            <span style={{color: '#28a745', fontWeight: 'bold'}}> Completed</span>
                                         ) : tutorialProgress.timeSpent > 0 ? (
-                                            <span style={{color: '#ffc107', fontWeight: 'bold'}}>🔄 In Progress</span>
+                                            <span style={{color: '#ffc107', fontWeight: 'bold'}}> In Progress</span>
                                         ) : (
-                                            <span style={{color: '#6c757d', fontWeight: 'bold'}}>⏳ Not Started</span>
+                                            <span style={{color: '#6c757d', fontWeight: 'bold'}}> Not Started</span>
                                         )}
                                         {tutorialProgress.quizScore > 0 && (
                                             <span style={{marginLeft: '15px'}}>
@@ -487,31 +487,31 @@ const TutorialPage = ({ onBackToHome, user }) => {
 
                             <div className="content-tabs">
                                 <button className={`tab ${activeTab === 'content' ? 'active' : ''}`} onClick={() => setActiveTab('content')}>
-                                    📚 Learning Content
+                                     Learning Content
                                 </button>
                                 {currentTutorial.hasVideo && (
                                     <button className={`tab ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>
-                                        🎥 Video Lesson
+                                         Video Lesson
                                     </button>
                                 )}
                                 {currentTutorial.exercise && (
                                     <button className={`tab ${activeTab === 'exercise' ? 'active' : ''}`} onClick={() => setActiveTab('exercise')}>
-                                        💡 Practice Exercise
+                                         Practice Exercise
                                     </button>
                                 )}
                                 {currentTutorial.hasQuiz && (
                                     <button className={`tab ${activeTab === 'quiz' ? 'active' : ''}`} onClick={() => setActiveTab('quiz')}>
-                                        📝 Knowledge Check
+                                         Knowledge Check
                                     </button>
                                 )}
                                 {currentTutorial.caseStudies && currentTutorial.caseStudies.length > 0 && (
                                     <button className={`tab ${activeTab === 'cases' ? 'active' : ''}`} onClick={() => setActiveTab('cases')}>
-                                        📊 Case Studies
+                                         Case Studies
                                     </button>
                                 )}
                                 {currentTutorial.glossary && Object.keys(currentTutorial.glossary).length > 0 && (
                                     <button className={`tab ${activeTab === 'glossary' ? 'active' : ''}`} onClick={() => setActiveTab('glossary')}>
-                                        📖 Glossary
+                                         Glossary
                                     </button>
                                 )}
                             </div>
@@ -617,7 +617,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
 
                                             {exerciseResult !== null && (
                                                 <div className={`exercise-result ${exerciseResult ? 'correct' : 'incorrect'}`}>
-                                                    {exerciseResult ? '✅ Correct! Well done!' : '❌ Try again!'}
+                                                    {exerciseResult ? ' Correct! Well done!' : ' Try again!'}
                                                 </div>
                                             )}
                                         </div>
@@ -674,7 +674,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                                             <div className="quiz-results">
                                                 <h3>Quiz Results</h3>
                                                 <div className={`result-card ${quizResults.passed ? 'passed' : 'failed'}`}>
-                                                    <h4>{quizResults.passed ? '🎉 Congratulations!' : '📚 Keep Learning!'}</h4>
+                                                    <h4>{quizResults.passed ? ' Congratulations!' : ' Keep Learning!'}</h4>
                                                     <div className="score-display">
                                                         Your Score: <span className="score">{quizResults.score}%</span>
                                                     </div>
@@ -683,7 +683,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                                                     </p>
                                                     {quizResults.passed && (
                                                         <div className="success-badge">
-                                                            🏆 Quiz Completed Successfully!
+                                                             Quiz Completed Successfully!
                                                         </div>
                                                     )}
                                                 </div>
@@ -785,7 +785,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                                         <div className="badges-grid">
                                             {userProgress.statistics.badges.map((badge, index) => (
                                                 <span key={index} className="badge">
-                                                    🏅 {badge}
+                                                     {badge}
                                                 </span>
                                             ))}
                                         </div>
@@ -798,7 +798,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                                         <div className="certifications-grid">
                                             {userProgress.statistics.certifications.map((cert, index) => (
                                                 <span key={index} className="certification">
-                                                    📜 {cert}
+                                                     {cert}
                                                 </span>
                                             ))}
                                         </div>
@@ -809,7 +809,7 @@ const TutorialPage = ({ onBackToHome, user }) => {
                             <div className="tutorial-footer">
                                 <div className="progress-actions">
                                     <button className="complete-btn" onClick={markAsComplete}>
-                                        ✅ Mark Complete
+                                         Mark Complete
                                     </button>
                                 </div>
 

@@ -327,28 +327,28 @@ const News = ({ user, onLogout, onNavigate }) => {
 
                     <div className="sidebar-action-buttons">
                         <button onClick={() => onNavigate('dashboard')} className="sidebar-action-button">
-                            📊 HOME
+                             HOME
                         </button>
                         <button onClick={() => onNavigate('portfolio')} className="sidebar-action-button">
-                            💼 PORTFOLIO
+                             PORTFOLIO
                         </button>
                         <button onClick={() => onNavigate('trade')} className="sidebar-action-button">
-                            💹 TRADE
+                             TRADE
                         </button>
                         <button onClick={() => onNavigate('forecast')} className="sidebar-action-button">
-                            🔮 FORECAST
+                             FORECAST
                         </button>
                         <button onClick={() => onNavigate('news')} className="sidebar-action-button primary">
-                            📰 NEWS
+                             NEWS
                         </button>
                         <button onClick={() => onNavigate('transactions')} className="sidebar-action-button">
-                            📋 TRANSACTIONS
+                             TRANSACTIONS
                         </button>
                     </div>
 
                     <div className="sign-out-section">
                         <button onClick={onLogout} className="sign-out-button">
-                            🚪 Sign Out
+                             Sign Out
                         </button>
                     </div>
                 </div>
@@ -357,7 +357,7 @@ const News = ({ user, onLogout, onNavigate }) => {
             {/* Main Content */}
             <div className="main-content">
                 <div className="news-header">
-                    <h1>📰 Live Market News</h1>
+                    <h1> Live Market News</h1>
                     <p>Real-time financial news and market updates • {currentTime.toLocaleString()}</p>
                     <div className="news-stats">
                         <div className="stat-item">
@@ -377,7 +377,7 @@ const News = ({ user, onLogout, onNavigate }) => {
 
                 {error && (
                     <div className="news-error">
-                        <span>⚠️ {error}</span>
+                        <span> {error}</span>
                     </div>
                 )}
 
@@ -428,7 +428,7 @@ const News = ({ user, onLogout, onNavigate }) => {
                                     <span className={`category-badge ${news.category.toLowerCase()}`}>
                                         {news.category}
                                     </span>
-                                    {news.isRecent && <span className="recent-badge">🆕 Recent</span>}
+                                    {news.isRecent && <span className="recent-badge"> Recent</span>}
                                 </div>
                                 <div className="news-content">
                                     <h3>{news.title}</h3>
@@ -446,8 +446,8 @@ const News = ({ user, onLogout, onNavigate }) => {
                                             disabled={!news.url || news.url === '#'}
                                         >
                                             {news.url && news.url !== '#' ?
-                                                `📖 Read Full Story on ${news.source}` :
-                                                '🔒 Source Not Available'
+                                                ` Read Full Story on ${news.source}` :
+                                                ' Source Not Available'
                                             }
                                         </button>
                                         {news.category === 'Forecast' && (
@@ -456,7 +456,7 @@ const News = ({ user, onLogout, onNavigate }) => {
                                                 onClick={() => onNavigate('forecast')}
                                                 title="Try our AI Forecasting tool"
                                             >
-                                                🔮 Try AI Forecast
+                                                 Try AI Forecast
                                             </button>
                                         )}
                                     </div>
@@ -465,7 +465,7 @@ const News = ({ user, onLogout, onNavigate }) => {
                         ))
                     ) : (
                         <div className="no-news">
-                            <div className="no-news-icon">📰</div>
+                            <div className="no-news-icon"></div>
                             <h3>No news available for this category</h3>
                             <p>Try selecting a different filter or check back later</p>
                         </div>
@@ -473,7 +473,7 @@ const News = ({ user, onLogout, onNavigate }) => {
                 </div>
 
                 <div className="news-footer">
-                    <p>🔄 Auto-refreshes every 10 minutes • 📊 Powered by NewsAPI • 🔮 AI Forecasting Available</p>
+                    <p> Auto-refreshes every 10 minutes •  Powered by NewsAPI •  AI Forecasting Available</p>
                     <p className="last-updated">Last updated: {currentTime.toLocaleString()}</p>
                 </div>
             </div>

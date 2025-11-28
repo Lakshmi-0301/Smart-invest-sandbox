@@ -71,7 +71,7 @@ const PriceChart = ({ historicalData, forecastData, isMarketOpen }) => {
                 </div>
                 {!isMarketOpen && (
                     <div className="market-closed-notice">
-                        📊 Displaying latest available data - Market is currently closed
+                         Displaying latest available data - Market is currently closed
                     </div>
                 )}
             </div>
@@ -371,28 +371,28 @@ useEffect(() => {
 
                     <div className="sidebar-action-buttons">
                         <button onClick={() => onNavigate('dashboard')} className="sidebar-action-button">
-                            📊 HOME
+                             HOME
                         </button>
                         <button onClick={() => onNavigate('portfolio')} className="sidebar-action-button">
-                            💼 PORTFOLIO
+                             PORTFOLIO
                         </button>
                         <button onClick={() => onNavigate('trade')} className="sidebar-action-button">
-                            💹 TRADE
+                             TRADE
                         </button>
                         <button onClick={() => onNavigate('forecast')} className="sidebar-action-button primary forecast-active">
-                            🔮 FORECAST
+                             FORECAST
                         </button>
                         <button onClick={() => onNavigate('news')} className="sidebar-action-button">
-                            📰 NEWS
+                             NEWS
                         </button>
                         <button onClick={() => onNavigate('transactions')} className="sidebar-action-button">
-                            📋 TRANSACTIONS
+                             TRANSACTIONS
                         </button>
                     </div>
 
                     <div className="sign-out-section">
                         <button onClick={onLogout} className="sign-out-button">
-                            🚪 Sign Out
+                             Sign Out
                         </button>
                     </div>
                 </div>
@@ -408,7 +408,7 @@ useEffect(() => {
                             <span className="market-hours">{marketStatus}</span>
                             {!isMarketOpen && (
                                 <span className="market-closed-warning">
-                                    📊 Using latest available data for AI forecasting
+                                     Using latest available data for AI forecasting
                                 </span>
                             )}
                         </div>
@@ -422,7 +422,7 @@ useEffect(() => {
 
                     {/* Forecast Header */}
                     <div className="forecast-header">
-                        <h1>🔮 AI Stock Market Forecasting</h1>
+                        <h1> AI Stock Market Forecasting</h1>
                         <p>Advanced machine learning predictions powered by LSTM neural networks</p>
                         {!isMarketOpen && (
                             <div className="market-closed-alert">
@@ -550,22 +550,22 @@ useEffect(() => {
                                 {/* Metrics Grid */}
                                 <div className="metrics-grid">
                                     <div className="metric-card">
-                                        <div className="metric-icon">📈</div>
+                                        <div className="metric-icon"></div>
                                         <div className="metric-value">{metrics.trendStrength.toFixed(1)}%</div>
                                         <div className="metric-label">Trend Strength</div>
                                     </div>
                                     <div className="metric-card">
-                                        <div className="metric-icon">⚡</div>
+                                        <div className="metric-icon"></div>
                                         <div className="metric-value">{metrics.volatility}%</div>
                                         <div className="metric-label">Volatility</div>
                                     </div>
                                     <div className="metric-card">
-                                        <div className="metric-icon">🎯</div>
+                                        <div className="metric-icon"></div>
                                         <div className="metric-value">{predictionAccuracy}%</div>
                                         <div className="metric-label">Model Accuracy</div>
                                     </div>
                                     <div className="metric-card">
-                                        <div className="metric-icon">📊</div>
+                                        <div className="metric-icon"></div>
                                         <div className="metric-value">{timeframe}</div>
                                         <div className="metric-label">Forecast Period</div>
                                     </div>
@@ -647,10 +647,9 @@ useEffect(() => {
 
                             {/* Trading Recommendations */}
                             <div className="recommendations">
-                                <h3>🤖 AI Trading Recommendations</h3>
+                                <h3> AI Trading Recommendations</h3>
                                 <div className="recommendation-cards">
                                     <div className="recommendation-card">
-                                        <div className="rec-icon">💡</div>
                                         <div className="rec-content">
                                             <h4>Market Sentiment</h4>
                                             <p>{forecastData.prediction.direction === 'bullish' ?
@@ -660,14 +659,12 @@ useEffect(() => {
                                         </div>
                                     </div>
                                     <div className="recommendation-card">
-                                        <div className="rec-icon">⚖️</div>
                                         <div className="rec-content">
                                             <h4>Risk Level</h4>
                                             <p>{metrics.volatility > 5 ? 'High Volatility' : 'Moderate Risk'}</p>
                                         </div>
                                     </div>
                                     <div className="recommendation-card">
-                                        <div className="rec-icon">🎯</div>
                                         <div className="rec-content">
                                             <h4>Suggested Action</h4>
                                             <p>{forecastData.prediction.direction === 'bullish' ?
@@ -681,11 +678,11 @@ useEffect(() => {
                         </div>
                     ) : (
                         <div className="forecast-error">
-                            <div className="error-icon">🔮</div>
+                            <div className="error-icon"></div>
                             <h3>Unable to load forecast data</h3>
                             <p>Please check your connection and try again</p>
                             <button onClick={fetchForecast} className="btn-primary">
-                                🔄 Retry
+                                 Retry
                             </button>
                         </div>
                     )}

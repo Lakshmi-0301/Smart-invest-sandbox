@@ -1,11 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../styles/Chatbot.css';
 
-const Chatbot = ({ onClose, user, transactions = [], portfolio = [], onNavigate }) => {
+const Chatbot = ({ onClose, user, transactions = [], portfolio = [] }) => {
     const [messages, setMessages] = useState([
         {
             id: 1,
-            text: `Hello ${user?.username || 'there'}! I'm your Smart Invest AI assistant. I can help you with:\n• Stock prices & analysis\n• Account details & balance\n• Portfolio performance\n• Transaction history\n• Investment advice\n• Market forecasts\n\nTry asking: "What is Apple stock price?" or "How is my portfolio doing?"`,
+            text: `Hello ${user?.username || 'there'}! I'm your Smart Invest AI assistant. I can help you with:
+• Stock prices & analysis
+• Account details & balance
+• Portfolio performance
+• Transaction history
+• Investment advice
+• Market forecasts
+
+Try asking: "What is Apple stock price?" or "How is my portfolio doing?"`,
             sender: 'bot',
             timestamp: new Date()
         }
@@ -14,7 +22,7 @@ const Chatbot = ({ onClose, user, transactions = [], portfolio = [], onNavigate 
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
-    // Comprehensive stock database
+    // Comprehensive stock database (static demo data)
     const stockData = {
         'AAPL': {
             price: 182.63, change: 1.24, changePercent: 0.68,
@@ -78,10 +86,10 @@ const Chatbot = ({ onClose, user, transactions = [], portfolio = [], onNavigate 
         }
     };
 
-    // Default data
+    // Default data (used when no real user/portfolio/transactions passed)
     const currentUser = user || {
-        username: 'Aishwarya',
-        email: 'aishwarya@gmail.com',
+        username: 'User',
+        email: 'user@example.com',
         balance: 98809.76
     };
 
@@ -98,14 +106,15 @@ const Chatbot = ({ onClose, user, transactions = [], portfolio = [], onNavigate 
     ];
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
-    // SMART RESPONSE GENERATOR - Handles ALL types of questions
+    // ------------- RESPONSE GENERATION LOGIC -------------
+
     const generateAIResponse = (userMessage) => {
         const lowerMessage = userMessage.toLowerCase();
 
@@ -148,10 +157,10 @@ ${getStockAdditionalInfo(foundSymbol)}`;
 
 Username: ${currentUser.username}
 Available Balance: $${currentUser.balance.toLocaleString()}
-Account Type: Live Trading
+Account Type: Simulation Account
 Status: Active and Ready
 
-Your funds are available for immediate trading!`;
+Your funds are available for immediate trading in your virtual account!`;
         }
 
         // 4. PORTFOLIO PERFORMANCE
@@ -300,10 +309,10 @@ Ask about any specific stock for detailed analysis!`;
 
         let response = `Your Portfolio Performance
 
-Total Portfolio Value: $${totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+Total Portfolio Value: $${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 Total Return: ${totalReturnPercent.toFixed(2)}% ${totalReturnPercent >= 0 ? '[UP]' : '[DOWN]'}
-Total Gain/Loss: $${totalGainLoss.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${totalGainLoss >= 0 ? '[UP]' : '[DOWN]'}
-Total Investment: $${totalInvestment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+Total Gain/Loss: $${totalGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${totalGainLoss >= 0 ? '[UP]' : '[DOWN]'}
+Total Investment: $${totalInvestment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 Number of Holdings: ${currentPortfolio.length} stocks
 Available Cash: $${currentUser.balance.toLocaleString()}
 
@@ -467,23 +476,21 @@ I can help you understand:
 What specific investment topic would you like me to explain?`;
     };
 
-    const handleSendMessage = async () => {
-        if (!inputMessage.trim() || isLoading) return;
+    // ------------- MESSAGE HANDLING -------------
 
+    const sendAndRespond = (text) => {
         const userMessage = {
             id: Date.now(),
-            text: inputMessage,
+            text,
             sender: 'user',
             timestamp: new Date()
         };
 
         setMessages(prev => [...prev, userMessage]);
-        setInputMessage('');
         setIsLoading(true);
 
-        // Simulate AI processing time
         setTimeout(() => {
-            const botResponse = generateAIResponse(inputMessage);
+            const botResponse = generateAIResponse(text);
             const botMessage = {
                 id: Date.now() + 1,
                 text: botResponse,
@@ -496,28 +503,16 @@ What specific investment topic would you like me to explain?`;
         }, 1000);
     };
 
+    const handleSendMessage = () => {
+        if (!inputMessage.trim() || isLoading) return;
+        const text = inputMessage;
+        setInputMessage('');
+        sendAndRespond(text);
+    };
+
     const handleQuickAction = (action) => {
-        const userMessage = {
-            id: Date.now(),
-            text: action,
-            sender: 'user',
-            timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, userMessage]);
-        setIsLoading(true);
-
-        setTimeout(() => {
-            const botResponse = generateAIResponse(action);
-            const botMessage = {
-                id: Date.now() + 1,
-                text: botResponse,
-                sender: 'bot',
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, botMessage]);
-            setIsLoading(false);
-        }, 1000);
+        if (isLoading) return;
+        sendAndRespond(action);
     };
 
     const handleKeyPress = (e) => {

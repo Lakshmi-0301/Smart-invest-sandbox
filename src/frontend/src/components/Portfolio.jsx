@@ -357,28 +357,28 @@ const Portfolio = ({ user, onLogout, onNavigate }) => {
 
                     <div className="sidebar-action-buttons">
                         <button onClick={() => onNavigate('dashboard')} className="sidebar-action-button">
-                            📊 HOME
+                             HOME
                         </button>
                         <button onClick={() => onNavigate('portfolio')} className="sidebar-action-button primary">
-                            💼 PORTFOLIO
+                             PORTFOLIO
                         </button>
                         <button onClick={() => onNavigate('trade')} className="sidebar-action-button">
-                            💹 TRADE
+                             TRADE
                         </button>
                         <button onClick={() => onNavigate('forecast')} className="sidebar-action-button">
-                            🔮 FORECAST
+                             FORECAST
                         </button>
                         <button onClick={() => onNavigate('news')} className="sidebar-action-button">
-                            📰 NEWS
+                             NEWS
                         </button>
                         <button onClick={() => onNavigate('transactions')} className="sidebar-action-button">
-                            📋 TRANSACTIONS
+                             TRANSACTIONS
                         </button>
                     </div>
 
                     <div className="sign-out-section">
                         <button onClick={onLogout} className="sign-out-button">
-                            🚪 Sign Out
+                             Sign Out
                         </button>
                     </div>
                 </div>
@@ -403,14 +403,14 @@ const Portfolio = ({ user, onLogout, onNavigate }) => {
 
                     {/* Portfolio Header */}
                     <div className="portfolio-header">
-                        <h1>📊 Portfolio Overview</h1>
+                        <h1> Portfolio Overview</h1>
                         <p>Track your investments and performance with accurate calculations</p>
                         <div className="header-actions">
                             <button onClick={() => onNavigate('trade')} className="btn-primary">
                                 ➕ Trade Stocks
                             </button>
                             <button onClick={() => handleForecastNavigation()} className="btn-forecast">
-                                🔮 Get AI Forecast
+                                 Get AI Forecast
                             </button>
                         </div>
                     </div>
@@ -524,7 +524,7 @@ const Portfolio = ({ user, onLogout, onNavigate }) => {
                     {/* Portfolio Table */}
                     <div className="portfolio-table">
                         <div className="table-header">
-                            <h3>📋 Your Stock Holdings</h3>
+                            <h3> Your Stock Holdings</h3>
                             <div className="table-header-actions">
                                 <button onClick={() => onNavigate('trade')} className="btn-primary">
                                     ➕ Trade Stocks
@@ -646,25 +646,25 @@ const Portfolio = ({ user, onLogout, onNavigate }) => {
 
                     {/* Portfolio Tips */}
                     <div className="portfolio-tips">
-                        <h3>💡 Portfolio Management Tips</h3>
+                        <h2> Portfolio Management Tips</h2>
                         <div className="tips-grid">
                             <div className="tip-card">
-                                <span className="tip-icon">📊</span>
+                                <span className="tip-icon"></span>
                                 <h4>Track Your Performance</h4>
                                 <p>Monitor your gain/loss percentages regularly to make informed investment decisions.</p>
                             </div>
                             <div className="tip-card">
-                                <span className="tip-icon">🔮</span>
+                                <span className="tip-icon"></span>
                                 <h4>Use AI Forecasting</h4>
                                 <p>Leverage AI predictions to anticipate market trends and optimize your portfolio strategy.</p>
                             </div>
                             <div className="tip-card">
-                                <span className="tip-icon">💰</span>
+                                <span className="tip-icon"></span>
                                 <h4>Understand Your Costs</h4>
                                 <p>Keep track of your average cost basis to accurately calculate your returns.</p>
                             </div>
                             <div className="tip-card">
-                                <span className="tip-icon">🎯</span>
+                                <span className="tip-icon"></span>
                                 <h4>Set Realistic Goals</h4>
                                 <p>Aim for consistent returns rather than chasing short-term gains.</p>
                             </div>

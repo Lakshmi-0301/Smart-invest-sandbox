@@ -241,13 +241,13 @@ const Trade = ({ user, onLogout, onNavigate }) => {
                 setStockData(data);
                 setSelectedStock(symbol);
                 setLimitPrice(data.price);
-                setMessage('✅ Real-time market data loaded');
+                setMessage(' Real-time market data loaded');
             } else {
                 throw new Error('No price data received');
             }
         } catch (error) {
             console.error('API error:', error);
-            setMessage(`❌ ${error.message}`);
+            setMessage(` ${error.message}`);
         } finally {
             setStockLoading(false);
         }
@@ -333,12 +333,12 @@ const Trade = ({ user, onLogout, onNavigate }) => {
     const executeTrade = async () => {
         // Check if Indian market is open first
         if (!isMarketOpen) {
-            setMessage('❌ Trading is only available when the Indian market is open (9:15 AM - 3:30 PM IST, Monday-Friday)');
+            setMessage(' Trading is only available when the Indian market is open (9:15 AM - 3:30 PM IST, Monday-Friday)');
             return;
         }
 
         if (!stockData || quantity <= 0) {
-            setMessage('❌ Please enter a valid quantity');
+            setMessage(' Please enter a valid quantity');
             return;
         }
 
@@ -346,19 +346,19 @@ const Trade = ({ user, onLogout, onNavigate }) => {
         const estimatedTotal = quantity * currentPrice;
 
         if (isNaN(estimatedTotal)) {
-            setMessage('❌ Invalid price data. Please try again.');
+            setMessage(' Invalid price data. Please try again.');
             return;
         }
 
         if (action === 'BUY' && estimatedTotal > user.balance) {
-            setMessage(`❌ Insufficient balance. You need ₹${estimatedTotal.toFixed(2)} but only have ₹${user.balance.toFixed(2)}`);
+            setMessage(` Insufficient balance. You need ₹${estimatedTotal.toFixed(2)} but only have ₹${user.balance.toFixed(2)}`);
             return;
         }
 
         if (action === 'SELL') {
             const currentHolding = portfolio[stockData.symbol] || 0;
             if (quantity > currentHolding) {
-                setMessage(`❌ Insufficient shares. You only have ${currentHolding} shares of ${stockData.symbol}`);
+                setMessage(` Insufficient shares. You only have ${currentHolding} shares of ${stockData.symbol}`);
                 return;
             }
         }
@@ -410,11 +410,11 @@ const Trade = ({ user, onLogout, onNavigate }) => {
             localStorage.setItem('userPortfolio', JSON.stringify(updatedPortfolio));
             localStorage.setItem('userTransactions', JSON.stringify(updatedTransactions));
 
-            setMessage(`✅ ${action} order executed successfully! ${quantity} shares of ${stockData.symbol} for ₹${estimatedTotal.toFixed(2)}`);
+            setMessage(` ${action} order executed successfully! ${quantity} shares of ${stockData.symbol} for ₹${estimatedTotal.toFixed(2)}`);
             setQuantity(1);
 
         } catch (error) {
-            setMessage('❌ Trade execution failed. Please try again.');
+            setMessage(' Trade execution failed. Please try again.');
             console.error('Trade error:', error);
         } finally {
             setLoading(false);
@@ -482,34 +482,34 @@ const Trade = ({ user, onLogout, onNavigate }) => {
                             ₹{user?.balance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                         </div>
                         <div className={`market-status-badge ${isMarketOpen ? 'open' : 'closed'}`}>
-                            {isMarketOpen ? '🟢 Market Open' : '🔴 Market Closed'}
+                            {isMarketOpen ? ' Market Open' : ' Market Closed'}
                         </div>
                     </div>
 
                     <div className="sidebar-action-buttons">
                         <button onClick={() => onNavigate('dashboard')} className="sidebar-action-button">
-                            📊 HOME
+                             HOME
                         </button>
                         <button onClick={() => onNavigate('portfolio')} className="sidebar-action-button">
-                            💼 PORTFOLIO
+                             PORTFOLIO
                         </button>
                         <button onClick={() => onNavigate('trade')} className="sidebar-action-button primary">
-                            💹 TRADE
+                             TRADE
                         </button>
                         <button onClick={() => onNavigate('forecast')} className="sidebar-action-button">
-                            🔮 FORECAST
+                             FORECAST
                         </button>
                         <button onClick={() => onNavigate('news')} className="sidebar-action-button">
-                            📰 NEWS
+                             NEWS
                         </button>
                         <button onClick={() => onNavigate('transactions')} className="sidebar-action-button">
-                            📋 TRANSACTIONS
+                             TRANSACTIONS
                         </button>
                     </div>
 
                     <div className="sign-out-section">
                         <button onClick={onLogout} className="sign-out-button">
-                            🚪 Sign Out
+                             Sign Out
                         </button>
                     </div>
                 </div>
@@ -537,7 +537,7 @@ const Trade = ({ user, onLogout, onNavigate }) => {
 
                     {/* Search Section */}
                     <div className="search-section">
-                        <h2>🔍 Search Indian Stocks</h2>
+                        <h2> Search Indian Stocks</h2>
                         <form onSubmit={handleSearch} className="search-form">
                             <div className="search-input-container">
                                 <input
@@ -705,7 +705,7 @@ const Trade = ({ user, onLogout, onNavigate }) => {
                                     {/* Trading Panel */}
                                     <div className="trading-panel">
                                         <div className="panel-header">
-                                            <h3>💹 Trading Panel</h3>
+                                            <h3> Trading Panel</h3>
                                             <div className="action-buttons">
                                                 <button
                                                     className={`action-btn ${action === 'BUY' ? 'active buy' : ''}`}
@@ -726,7 +726,6 @@ const Trade = ({ user, onLogout, onNavigate }) => {
 
                                         {!isMarketOpen && (
                                             <div className="market-closed-warning">
-                                                <div className="warning-icon">⏰</div>
                                                 <div className="warning-content">
                                                     <strong>Indian Market Closed</strong>
                                                     <p>Trading available only during Indian market hours (9:15 AM - 3:30 PM IST, Monday-Friday)</p>
@@ -735,7 +734,7 @@ const Trade = ({ user, onLogout, onNavigate }) => {
                                                         className="btn-forecast-small"
                                                         style={{marginTop: '10px'}}
                                                     >
-                                                        🔮 Get AI Forecast Instead
+                                                         Get AI Forecast Instead
                                                     </button>
                                                 </div>
                                             </div>
@@ -856,7 +855,7 @@ const Trade = ({ user, onLogout, onNavigate }) => {
                                                     onClick={clearOrder}
                                                     disabled={loading}
                                                 >
-                                                    🗑️ Clear Order
+                                                    ️ Clear Order
                                                 </button>
                                                 <button
                                                     className={`btn-primary ${!canAfford || !isMarketOpen ? 'disabled' : ''}`}
@@ -869,7 +868,7 @@ const Trade = ({ user, onLogout, onNavigate }) => {
                                                             Processing...
                                                         </>
                                                     ) : (
-                                                        `🎯 ${action} ${orderType === 'LIMIT' ? 'LIMIT' : 'MARKET'} ORDER`
+                                                        ` ${action} ${orderType === 'LIMIT' ? 'LIMIT' : 'MARKET'} ORDER`
                                                     )}
                                                 </button>
                                             </div>

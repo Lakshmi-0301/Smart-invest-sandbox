@@ -225,28 +225,28 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
 
                     <div className="sidebar-action-buttons">
                         <button onClick={() => onNavigate('dashboard')} className="sidebar-action-button">
-                            📊 HOME
+                             HOME
                         </button>
                         <button onClick={() => onNavigate('portfolio')} className="sidebar-action-button">
-                            💼 PORTFOLIO
+                             PORTFOLIO
                         </button>
                         <button onClick={() => onNavigate('trade')} className="sidebar-action-button">
-                            💹 TRADE
+                             TRADE
                         </button>
                         <button onClick={() => onNavigate('forecast')} className="sidebar-action-button">
-                            🔮 FORECAST
+                             FORECAST
                         </button>
                         <button onClick={() => onNavigate('news')} className="sidebar-action-button">
-                            📰 NEWS
+                             NEWS
                         </button>
                         <button onClick={() => onNavigate('transactions')} className="sidebar-action-button primary">
-                            📋 TRANSACTIONS
+                             TRANSACTIONS
                         </button>
                     </div>
 
                     <div className="sign-out-section">
                         <button onClick={onLogout} className="sign-out-button">
-                            🚪 Sign Out
+                             Sign Out
                         </button>
                     </div>
                 </div>
@@ -272,14 +272,14 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                     {/* Transactions Header */}
                     <div className="transactions-header">
                         <div className="header-main">
-                            <h1>📋 Transaction History</h1>
+                            <h1> Transaction History</h1>
                             <p>Complete record of your trading activity and investment history</p>
                         </div>
                         <button
                             onClick={() => handleForecastNavigation()}
                             className="btn-forecast"
                         >
-                            🔮 Get AI Forecast
+                             Get AI Forecast
                         </button>
                     </div>
 
@@ -340,14 +340,14 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                             <div className="search-group">
                                 <input
                                     type="text"
-                                    placeholder="🔍 Search by symbol, name, or order type..."
+                                    placeholder=" Search by symbol, name, or order type..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
 
                             <button onClick={handleClearFilters} className="clear-filters">
-                                🗑️ Clear Filters
+                                ️ Clear Filters
                             </button>
 
                             <div className="results-count">
@@ -360,7 +360,6 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                     <div className="transactions-table-container">
                         {filteredTransactions.length === 0 ? (
                             <div className="empty-transactions">
-                                <div className="empty-icon">📊</div>
                                 <h3>No transactions found</h3>
                                 <p>
                                     {transactions.length === 0
@@ -371,14 +370,14 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                                 <div className="empty-actions">
                                     {transactions.length === 0 && (
                                         <button onClick={() => onNavigate('trade')} className="btn-primary">
-                                            🚀 Start Trading
+                                             Start Trading
                                         </button>
                                     )}
                                     <button
                                         onClick={() => handleForecastNavigation()}
                                         className="btn-forecast"
                                     >
-                                        🔮 Explore Forecasts
+                                         Explore Forecasts
                                     </button>
                                 </div>
                             </div>
@@ -388,7 +387,7 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                                     <h3>Recent Transactions</h3>
                                     <div className="table-actions">
                                         <button className="export-btn">
-                                            📥 Export CSV
+                                             Export CSV
                                         </button>
                                         <button
                                             onClick={() => handleForecastNavigation()}
@@ -466,7 +465,7 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                     {filteredTransactions.length > 0 && (
                         <div className="transaction-summary">
                             <div className="summary-header">
-                                <h3>📊 Transaction Summary</h3>
+                                <h3> Transaction Summary</h3>
                                 <button
                                     onClick={() => handleForecastNavigation()}
                                     className="btn-forecast"
@@ -503,7 +502,7 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                                 {/* Most Traded Stocks */}
                                 {mostTradedStocks.length > 0 && (
                                     <div className="most-traded-stocks">
-                                        <h4>🎯 Your Most Traded Stocks</h4>
+                                        <h4> Your Most Traded Stocks</h4>
                                         <div className="traded-stocks-list">
                                             {mostTradedStocks.map(([symbol, count]) => (
                                                 <div key={symbol} className="traded-stock-item">
@@ -530,17 +529,15 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                     {/* Trading Insights */}
                     {filteredTransactions.length > 5 && (
                         <div className="trading-insights">
-                            <h3>💡 Trading Insights & AI Suggestions</h3>
+                            <h3> Trading Insights & AI Suggestions</h3>
                             <div className="insights-grid">
                                 <div className="insight-card">
-                                    <div className="insight-icon">📈</div>
                                     <div className="insight-content">
                                         <h4>Analyze Your Patterns</h4>
                                         <p>Review your most traded stocks and trading frequency to identify patterns.</p>
                                     </div>
                                 </div>
                                 <div className="insight-card">
-                                    <div className="insight-icon">🔮</div>
                                     <div className="insight-content">
                                         <h4>AI Forecasting</h4>
                                         <p>Use AI predictions to optimize your future trading decisions based on your history.</p>
@@ -553,7 +550,6 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                                     </div>
                                 </div>
                                 <div className="insight-card">
-                                    <div className="insight-icon">💰</div>
                                     <div className="insight-content">
                                         <h4>Performance Review</h4>
                                         <p>Monitor your net cash flow and adjust your strategy for better returns.</p>
@@ -564,7 +560,7 @@ const Transactions = ({ user, onLogout, onNavigate }) => {
                     )}
 
                     <div className="transactions-footer">
-                        <p>💡 Tip: Use AI forecasting to predict future market movements based on your trading patterns</p>
+                        <p> Tip: Use AI forecasting to predict future market movements based on your trading patterns</p>
                         <button
                             onClick={() => handleForecastNavigation()}
                             className="btn-forecast-small"

@@ -1,8 +1,6 @@
 import backend.controllers.StockController;
-import backend.services.AlphaVantageService;
-import backend.services.AuthService;
-import backend.services.PortfolioService;
-import backend.services.TutorialService;
+import backend.controllers.ForecastController;
+import backend.services.*;
 import backend.database.DatabaseHandler;
 import backend.models.User;
 import backend.models.Portfolio;
@@ -11,7 +9,7 @@ import backend.models.TutorialSection;
 import backend.models.Quiz;
 import backend.models.Question;
 import backend.models.Exercise;
-import backend.models.CaseStudy;
+import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
@@ -20,21 +18,25 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import org.json.JSONObject;
-import org.json.JSONArray;
 
 public class Main {
     private static StockController stockController;
     private static AuthService authService;
     private static PortfolioService portfolioService;
     private static TutorialService tutorialService;
+    private static final Gson gson = new Gson();
+    private static HttpServer server;
 
     public static void main(String[] args) {
         try {
+            System.out.println(" Starting Smart-Invest Server...");
+
             // Initialize services
+            System.out.println(" Initializing services...");
             DatabaseHandler dbHandler = new DatabaseHandler();
             authService = new AuthService(dbHandler);
             AlphaVantageService alphaVantageService = new AlphaVantageService();
@@ -43,7 +45,8 @@ public class Main {
             tutorialService = new TutorialService();
 
             // Create HTTP server
-            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+            System.out.println(" Creating HTTP server on port 8080...");
+            server = HttpServer.create(new InetSocketAddress(8080), 0);
 
             // ========== TRADING SYSTEM ROUTES ==========
             server.createContext("/api/stocks", new StockHandler());
@@ -64,35 +67,147 @@ public class Main {
             server.createContext("/api/tutorials/progress/complete", new TutorialProgressCompleteHandler());
             server.createContext("/api/health", new HealthHandler());
 
+            // ========== FORECAST ENDPOINT ==========
+            server.createContext("/api/forecast", new ForecastHandler());
+
+            // Set executor to null (uses default)
             server.setExecutor(null);
+
+            // Start the server
             server.start();
 
-            System.out.println("🚀 Smart-Invest Server started on port 8080");
-            System.out.println("=== TRADING SYSTEM ENDPOINTS ===");
-            System.out.println("GET  /api/stocks/{symbol}");
-            System.out.println("POST /api/auth/login");
-            System.out.println("POST /api/auth/register");
-            System.out.println("GET  /api/portfolio?username={username}");
-            System.out.println("GET  /api/transactions?username={username}");
-            System.out.println("POST /api/trade/buy");
-            System.out.println("POST /api/trade/sell");
+            System.out.println(" Smart-Invest Server started successfully on port 8080");
+            System.out.println(" Server is running and waiting for requests...");
 
-            System.out.println("=== TUTORIAL SYSTEM ENDPOINTS ===");
-            System.out.println("GET  /api/tutorials");
-            System.out.println("GET  /api/tutorial/{id}");
-            System.out.println("GET  /api/tutorials/search?q={query}");
-            System.out.println("GET  /api/tutorials/by-level?level={level}");
-            System.out.println("GET  /api/tutorials/by-category?category={category}");
-            System.out.println("GET  /api/tutorials/progress?username={username}");
-            System.out.println("POST /api/tutorials/progress/complete");
-            System.out.println("GET  /api/tutorial/quiz?tutorialId={id}");
-            System.out.println("POST /api/tutorial/quiz");
-            System.out.println("GET  /api/tutorial/exercise?tutorialId={id}");
-            System.out.println("POST /api/tutorial/{id}/validate");
+            // Keep the main thread alive
+            System.out.println(" Press Ctrl+C to stop the server...");
+
+            // Add shutdown hook
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("\n Shutting down server...");
+                if (server != null) {
+                    server.stop(0);
+                }
+                System.out.println(" Server stopped.");
+            }));
+
+            // Keep the main thread alive
+            Thread.currentThread().join();
 
         } catch (Exception e) {
-            System.err.println("❌ Failed to start server: " + e.getMessage());
+            System.err.println(" Failed to start server: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    // ===================== FORECAST HANDLER =====================
+    static class ForecastHandler implements HttpHandler {
+        private final ForecastController forecastController;
+        private final Gson gson = new Gson();
+
+        public ForecastHandler() {
+            System.out.println(" Initializing ForecastHandler...");
+            this.forecastController = new ForecastController();
+        }
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            System.out.println(" Received forecast request: " + exchange.getRequestMethod() + " " + exchange.getRequestURI());
+
+            setCorsHeaders(exchange);
+
+            // Handle preflight OPTIONS request
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                System.out.println(" Handling OPTIONS preflight request");
+                exchange.sendResponseHeaders(200, -1);
+                exchange.close();
+                return;
+            }
+
+            // Only allow GET requests
+            if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                System.out.println(" Method not allowed: " + exchange.getRequestMethod());
+                sendResponse(exchange, 405, "{\"error\": \"Method not allowed\"}");
+                return;
+            }
+
+            try {
+                // Parse query parameters
+                String query = exchange.getRequestURI().getQuery();
+                String symbol = "AAPL"; // default
+                int days = 7; // default
+
+                if (query != null) {
+                    System.out.println(" Query string: " + query);
+                    Map<String, String> params = parseQueryParams(query);
+                    symbol = params.getOrDefault("symbol", "AAPL");
+                    String daysStr = params.get("days");
+                    if (daysStr != null) {
+                        try {
+                            days = Integer.parseInt(daysStr);
+                        } catch (NumberFormatException e) {
+                            System.out.println("️ Invalid days parameter, using default: 7");
+                            days = 7;
+                        }
+                    }
+                }
+
+                System.out.println(" Forecast request for symbol: " + symbol + ", days: " + days);
+
+                // Get historical prices
+                List<Double> prices = forecastController.getHistoricalPrices(symbol);
+                System.out.println(" Got " + prices.size() + " historical prices");
+
+                // Run forecast
+                LSTMForecaster.ForecastResult result = forecastController.getForecastResult(symbol, days);
+                System.out.println(" Forecast generated with confidence: " + result.confidence + "%");
+
+                // Prepare response - only return last 30 days of historical data
+                int historicalSize = prices.size();
+                List<Double> recentHistorical = prices.subList(
+                        Math.max(0, historicalSize - Math.min(30, historicalSize)),
+                        historicalSize
+                );
+
+                List<Double> forecast = result.predictions.subList(
+                        0,
+                        Math.min(days, result.predictions.size())
+                );
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("symbol", symbol);
+                response.put("historical", recentHistorical);
+                response.put("forecast", forecast);
+                response.put("confidence", result.confidence);
+                response.put("direction", result.direction);
+                response.put("modelType", "LSTM Neural Network");
+
+                String jsonResponse = gson.toJson(response);
+                System.out.println(" Forecast generated successfully for " + symbol);
+                sendResponse(exchange, 200, jsonResponse);
+
+            } catch (Exception e) {
+                System.err.println(" Error in ForecastHandler: " + e.getMessage());
+                e.printStackTrace();
+                sendResponse(exchange, 500, "{\"error\": \"Internal server error: " + e.getMessage() + "\"}");
+            } finally {
+                exchange.close();
+            }
+        }
+
+        private Map<String, String> parseQueryParams(String query) {
+            Map<String, String> params = new HashMap<>();
+            if (query != null) {
+                for (String param : query.split("&")) {
+                    String[] pair = param.split("=");
+                    if (pair.length > 1) {
+                        params.put(pair[0], pair[1]);
+                    } else if (pair.length == 1) {
+                        params.put(pair[0], "");
+                    }
+                }
+            }
+            return params;
         }
     }
 
@@ -100,6 +215,8 @@ public class Main {
     static class StockHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            System.out.println(" Received stock request: " + exchange.getRequestMethod() + " " + exchange.getRequestURI());
+
             setCorsHeaders(exchange);
             if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, -1);
@@ -120,6 +237,7 @@ public class Main {
                         return;
                     }
 
+                    System.out.println(" Fetching stock data for: " + symbol);
                     Map<String, Object> stockData = stockController.getStockQuote(symbol);
                     String response = "{\"success\":true,\"data\":" + convertObjectToJson(stockData) + "}";
                     sendResponse(exchange, 200, response);
@@ -129,6 +247,8 @@ public class Main {
             } catch (Exception e) {
                 System.err.println("Error in StockHandler: " + e.getMessage());
                 sendResponse(exchange, 500, "{\"error\": \"Internal server error: " + e.getMessage() + "\"}");
+            } finally {
+                exchange.close();
             }
         }
     }
@@ -137,6 +257,8 @@ public class Main {
     static class AuthHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            System.out.println(" Received auth request: " + exchange.getRequestMethod() + " " + exchange.getRequestURI());
+
             setCorsHeaders(exchange);
             if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, -1);
@@ -162,6 +284,8 @@ public class Main {
             } catch (Exception e) {
                 System.err.println("Error in AuthHandler: " + e.getMessage());
                 sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            } finally {
+                exchange.close();
             }
         }
 
@@ -175,6 +299,7 @@ public class Main {
                     return;
                 }
 
+                System.out.println(" Login attempt for user: " + username);
                 User user = authService.loginUser(username, password);
                 if (user != null) {
                     String response = String.format(
@@ -203,6 +328,7 @@ public class Main {
                     return;
                 }
 
+                System.out.println(" Registration attempt for user: " + username);
                 User newUser = authService.registerUser(username, password, email);
                 if (newUser != null) {
                     String response = String.format(
@@ -225,6 +351,8 @@ public class Main {
     static class PortfolioHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            System.out.println(" Received portfolio request: " + exchange.getRequestMethod() + " " + exchange.getRequestURI());
+
             setCorsHeaders(exchange);
             if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, -1);
@@ -245,6 +373,7 @@ public class Main {
                     return;
                 }
 
+                System.out.println(" Fetching portfolio for user: " + username);
                 List<Portfolio> portfolio = portfolioService.getPortfolio(username);
                 String portfolioJson = convertPortfolioToJson(portfolio);
                 double totalValue = portfolioService.getPortfolioValue(username);
@@ -259,6 +388,8 @@ public class Main {
             } catch (Exception e) {
                 System.err.println("Error in PortfolioHandler: " + e.getMessage());
                 sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            } finally {
+                exchange.close();
             }
         }
     }
@@ -267,6 +398,8 @@ public class Main {
     static class TransactionsHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            System.out.println(" Received transactions request: " + exchange.getRequestMethod() + " " + exchange.getRequestURI());
+
             setCorsHeaders(exchange);
             if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, -1);
@@ -287,6 +420,7 @@ public class Main {
                     return;
                 }
 
+                System.out.println(" Fetching transactions for user: " + username);
                 List<Transaction> transactions = portfolioService.getTransactions(username);
                 String transactionsJson = convertTransactionsToJson(transactions);
 
@@ -296,6 +430,8 @@ public class Main {
             } catch (Exception e) {
                 System.err.println("Error in TransactionsHandler: " + e.getMessage());
                 sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            } finally {
+                exchange.close();
             }
         }
     }
@@ -304,6 +440,8 @@ public class Main {
     static class TradeHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            System.out.println(" Received trade request: " + exchange.getRequestMethod() + " " + exchange.getRequestURI());
+
             setCorsHeaders(exchange);
             if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, -1);
@@ -329,6 +467,8 @@ public class Main {
             } catch (Exception e) {
                 System.err.println("Error in TradeHandler: " + e.getMessage());
                 sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            } finally {
+                exchange.close();
             }
         }
 
@@ -347,6 +487,7 @@ public class Main {
 
             try {
                 int quantity = Integer.parseInt(quantityStr);
+                System.out.println(" Buy order: " + username + " wants to buy " + quantity + " shares of " + symbol);
                 Map<String, Object> result = portfolioService.buyStock(username, symbol, stockName, quantity, orderType, duration);
 
                 if (Boolean.TRUE.equals(result.get("success"))) {
@@ -382,6 +523,7 @@ public class Main {
 
             try {
                 int quantity = Integer.parseInt(quantityStr);
+                System.out.println(" Sell order: " + username + " wants to sell " + quantity + " shares of " + symbol);
                 Map<String, Object> result = portfolioService.sellStock(username, symbol, stockName, quantity, orderType, duration);
 
                 if (Boolean.TRUE.equals(result.get("success"))) {
@@ -402,6 +544,7 @@ public class Main {
             }
         }
     }
+
 
     // ===================== TUTORIAL HANDLERS =====================
 
@@ -981,7 +1124,7 @@ public class Main {
         }
     }
 
-    // JSON Conversion Methods
+    // JSON Conversion Methods (keep as they were)
     private static String convertPortfolioToJson(List<Portfolio> portfolio) {
         StringBuilder json = new StringBuilder("[");
         for (int i = 0; i < portfolio.size(); i++) {

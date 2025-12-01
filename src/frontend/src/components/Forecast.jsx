@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/Forecast.css';
+import { getForecast } from '../services/api';
 
 // Mock chart component - replace with actual Chart.js or similar
 const PriceChart = ({ historicalData, forecastData, isMarketOpen }) => {
@@ -113,6 +114,25 @@ const Forecast = ({ user, onLogout, onNavigate }) => {
         { symbol: 'BA', name: 'Boeing Company', sector: 'Industrial' }
     ];
 
+    // Helper functions to find stock name and sector
+    const findStockName = (symbol) => {
+        const stock = availableStocks.find(stock =>
+            stock.symbol === symbol ||
+            stock.symbol === symbol.toUpperCase() ||
+            stock.symbol === symbol.toLowerCase()
+        );
+        return stock ? stock.name : symbol;
+    };
+
+    const findStockSector = (symbol) => {
+        const stock = availableStocks.find(stock =>
+            stock.symbol === symbol ||
+            stock.symbol === symbol.toUpperCase() ||
+            stock.symbol === symbol.toLowerCase()
+        );
+        return stock ? stock.sector : 'Unknown Sector';
+    };
+
     // Filter stocks based on search
     const filteredStocks = availableStocks.filter(stock =>
         stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -120,58 +140,58 @@ const Forecast = ({ user, onLogout, onNavigate }) => {
     );
 
     // Calculate market status with open/closed flag
-useEffect(() => {
-    const updateMarketStatus = () => {
-        const now = new Date();
-        const istTime = new Date(
-            now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-        );
-        const day = istTime.getDay();
-        const hours = istTime.getHours();
-        const minutes = istTime.getMinutes();
-
-        // Indian market hours: 9:15 AM - 3:30 PM IST, Monday–Friday
-        const isWeekend = day === 0 || day === 6;
-        const isMarketHours =
-            !isWeekend &&
-            hours >= 9 &&
-            hours < 15 &&
-            !(hours === 9 && minutes < 15); // same logic as Trade.jsx
-
-        let status = '';
-
-        if (isWeekend) {
-            status = 'Market closed for weekend';
-        } else if (hours < 9 || (hours === 9 && minutes < 15)) {
-            const openTime = new Date(istTime);
-            openTime.setHours(9, 15, 0, 0);
-            const diff = openTime - istTime;
-            const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
-            const minutesLeft = Math.floor(
-                (diff % (1000 * 60 * 60)) / (1000 * 60)
+    useEffect(() => {
+        const updateMarketStatus = () => {
+            const now = new Date();
+            const istTime = new Date(
+                now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
             );
-            status = `Market opens in ${hoursLeft}h ${minutesLeft}m`;
-        } else if (hours < 15) {
-            const closeTime = new Date(istTime);
-            closeTime.setHours(15, 30, 0, 0);
-            const diff = closeTime - istTime;
-            const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
-            const minutesLeft = Math.floor(
-                (diff % (1000 * 60 * 60)) / (1000 * 60)
-            );
-            status = `Market is open - Closes in ${hoursLeft}h ${minutesLeft}m`;
-        } else {
-            status = 'Market closed for today';
-        }
+            const day = istTime.getDay();
+            const hours = istTime.getHours();
+            const minutes = istTime.getMinutes();
 
-        setMarketStatus(status);
-        setIsMarketOpen(isMarketHours);
-    };
+            // Indian market hours: 9:15 AM - 3:30 PM IST, Monday–Friday
+            const isWeekend = day === 0 || day === 6;
+            const isMarketHours =
+                !isWeekend &&
+                hours >= 9 &&
+                hours < 15 &&
+                !(hours === 9 && minutes < 15); // same logic as Trade.jsx
 
-    updateMarketStatus();
-    const interval = setInterval(updateMarketStatus, 60000);
-    return () => clearInterval(interval);
-}, []);
+            let status = '';
+
+            if (isWeekend) {
+                status = 'Market closed for weekend';
+            } else if (hours < 9 || (hours === 9 && minutes < 15)) {
+                const openTime = new Date(istTime);
+                openTime.setHours(9, 15, 0, 0);
+                const diff = openTime - istTime;
+                const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
+                const minutesLeft = Math.floor(
+                    (diff % (1000 * 60 * 60)) / (1000 * 60)
+                );
+                status = `Market opens in ${hoursLeft}h ${minutesLeft}m`;
+            } else if (hours < 15) {
+                const closeTime = new Date(istTime);
+                closeTime.setHours(15, 30, 0, 0);
+                const diff = closeTime - istTime;
+                const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
+                const minutesLeft = Math.floor(
+                    (diff % (1000 * 60 * 60)) / (1000 * 60)
+                );
+                status = `Market is open - Closes in ${hoursLeft}h ${minutesLeft}m`;
+            } else {
+                status = 'Market closed for today';
+            }
+
+            setMarketStatus(status);
+            setIsMarketOpen(isMarketHours);
+        };
+
+        updateMarketStatus();
+        const interval = setInterval(updateMarketStatus, 60000);
+        return () => clearInterval(interval);
+    }, []);
 
 
     // Enhanced forecast data generation with realistic patterns
@@ -256,24 +276,51 @@ useEffect(() => {
         return finalPrediction;
     };
 
-    const fetchForecast = async () => {
-        if (!isMarketOpen) {
-            // Show warning but still allow forecasting
-            console.log('Market is closed - Using latest available data for forecasting');
-        }
 
+    // Replace the generateForecastData function:
+    const fetchForecast = async () => {
         setLoading(true);
         try {
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            const data = generateForecastData();
-            setForecastData(data);
+            // Call real LSTM backend
+            const data = await getForecast(selectedStock, timeframe === '7d' ? 7 : 30);
+
+            // Transform API response
+            const forecastObj = {
+                symbol: data.symbol,
+                name: findStockName(data.symbol),
+                sector: findStockSector(data.symbol),
+                historical: data.historical.map((price, i) => ({
+                    date: new Date(Date.now() - (data.historical.length - i) * 86400000)
+                        .toISOString().split('T')[0],
+                    price: price,
+                    actual: true
+                })),
+                forecast: data.forecast.map((price, i) => ({
+                    date: new Date(Date.now() + (i + 1) * 86400000)
+                        .toISOString().split('T')[0],
+                    price: price,
+                    forecast: true,
+                    confidence: data.confidence - (i * 1.5)
+                })),
+                currentPrice: data.historical[data.historical.length - 1],
+                prediction: {
+                    direction: data.direction,
+                    confidence: data.confidence,
+                    targetPrice: data.forecast[data.forecast.length - 1],
+                    timeframe: timeframe,
+                    modelType: data.modelType
+                }
+            };
+
+            setForecastData(forecastObj);
+            setPredictionAccuracy(data.confidence);
         } catch (error) {
             console.error('Error fetching forecast:', error);
         } finally {
             setLoading(false);
         }
     };
+
 
     useEffect(() => {
         fetchForecast();

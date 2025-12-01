@@ -72,7 +72,17 @@ export const authAPI = {
         }
     }
 };
-
+export const getForecast = async (symbol, days = 7) => {
+    try {
+        const response = await fetch(
+            `http://localhost:8080/api/forecast?symbol=${symbol}&days=${days}`
+        );
+        return response.json();
+    } catch (error) {
+        console.error('Forecast API error:', error);
+        throw error;
+    }
+};
 export const stockAPI = {
     // Fetch stock data by symbol
     getStock: async (symbol) => {
@@ -262,7 +272,7 @@ export const tutorialAPI = {
     // Submit quiz
     submitQuiz: async (tutorialId, answers, username) => {
         try {
-            console.log('🔄 Submitting quiz...');
+            console.log(' Submitting quiz...');
             console.log('Tutorial ID:', tutorialId);
             console.log('Username:', username);
             console.log('Answers:', answers);
@@ -304,7 +314,7 @@ export const tutorialAPI = {
     // Get tutorial quiz
     getQuiz: async (tutorialId) => {
         try {
-            console.log(`🔄 Fetching quiz for tutorial: ${tutorialId}`);
+            console.log(` Fetching quiz for tutorial: ${tutorialId}`);
             const response = await axios.get(`${TUTORIAL_BASE}/tutorial/quiz`, {
                 params: { tutorialId }
             });
